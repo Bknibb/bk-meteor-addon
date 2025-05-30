@@ -19,6 +19,7 @@ public class BkMeteorAddon extends MeteorAddon {
     public static final Logger LOG = LogUtils.getLogger();
     public static final Category CATEGORY = new Category("BkMeteorAddon");
     public static BkMeteorAddon INSTNACE;
+    public static final boolean UPDATER_ENABLED = false;
 
     @Override
     public void onInitialize() {

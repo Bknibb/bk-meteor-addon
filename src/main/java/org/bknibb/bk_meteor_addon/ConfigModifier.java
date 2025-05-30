@@ -12,7 +12,7 @@ public class ConfigModifier {
 
     public final Setting<Boolean> checkForUpdates = sgBkMeteorAddon.add(new BoolSetting.Builder()
             .name("check-for-updates")
-            .description("Check for BkMeteorAddon updates.")
+            .description(BkMeteorAddon.UPDATER_ENABLED ? "Check for BkMeteorAddon updates." : "Check for BkMeteorAddon updates (disabled in this build).")
             .defaultValue(true)
             .build()
     );

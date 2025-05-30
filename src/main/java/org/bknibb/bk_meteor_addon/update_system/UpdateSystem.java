@@ -20,6 +20,10 @@ public class UpdateSystem {
     private static final CheckMode checkMode = CheckMode.Version;
     public static final Logger LOG = BkMeteorAddon.LOG;
     public static void checkForUpdates(MeteorAddon addon) {
+        if (!BkMeteorAddon.UPDATER_ENABLED) {
+            LOG.info("Update system is disabled.");
+            return;
+        }
         if (checkMode == CheckMode.Commit && addon.getCommit() == null) return;
         // Check for updates
         GithubRepo repo = addon.getRepo();
