@@ -150,16 +150,16 @@ public class PlayerEsp extends Module {
             NbtCompound tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("listMode")) {
-                listMode.fromTag(tag.getCompound("listMode"));
+                listMode.fromTag(tag.getCompound("listMode").get());
             }
             if (tag.contains("blacklist")) {
-                blacklist.fromTag(tag.getCompound("blacklist"));
+                blacklist.fromTag(tag.getCompound("blacklist").get());
             }
             if (tag.contains("includeFriends")) {
-                includeFriends.fromTag(tag.getCompound("includeFriends"));
+                includeFriends.fromTag(tag.getCompound("includeFriends").get());
             }
             if (tag.contains("whitelist")) {
-                whitelist.fromTag(tag.getCompound("whitelist"));
+                whitelist.fromTag(tag.getCompound("whitelist").get());
             }
         };
         return list;
@@ -256,7 +256,7 @@ public class PlayerEsp extends Module {
             count++;
         }
 
-        Renderer2D.COLOR.render(null);
+        Renderer2D.COLOR.render();
     }
 
     private boolean checkCorner(double x, double y, double z, Vector3d min, Vector3d max) {

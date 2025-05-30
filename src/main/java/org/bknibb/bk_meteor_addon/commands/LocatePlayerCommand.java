@@ -57,9 +57,9 @@ public class LocatePlayerCommand extends Command {
         if (mc.options.hudHidden || Modules.get().get(PlayerTracers.class).style.get() == PlayerTracers.TracerStyle.Offscreen) return;
         Color color =  Modules.get().get(PlayerTracers.class).getEntityColor(targetPlayer);
 
-        double x = targetPlayer.prevX + (targetPlayer.getX() - targetPlayer.prevX) * event.tickDelta;
-        double y = targetPlayer.prevY + (targetPlayer.getY() - targetPlayer.prevY) * event.tickDelta;
-        double z = targetPlayer.prevZ + (targetPlayer.getZ() - targetPlayer.prevZ) * event.tickDelta;
+        double x = targetPlayer.lastX + (targetPlayer.getX() - targetPlayer.lastX) * event.tickDelta;
+        double y = targetPlayer.lastY + (targetPlayer.getY() - targetPlayer.lastY) * event.tickDelta;
+        double z = targetPlayer.lastZ + (targetPlayer.getZ() - targetPlayer.lastZ) * event.tickDelta;
 
         double height = targetPlayer.getBoundingBox().maxY - targetPlayer.getBoundingBox().minY;
         if (Modules.get().get(PlayerTracers.class).target.get() == Target.Head) y += height;
@@ -87,13 +87,13 @@ public class LocatePlayerCommand extends Command {
 
         Vec2f screenCenter = new Vec2f(mc.getWindow().getFramebufferWidth() / 2.f, mc.getWindow().getFramebufferHeight() / 2.f);
 
-        Vector3d projection = new Vector3d(targetPlayer.prevX, targetPlayer.prevY, targetPlayer.prevZ);
+        Vector3d projection = new Vector3d(targetPlayer.lastX, targetPlayer.lastY, targetPlayer.lastZ);
         boolean projSucceeded = NametagUtils.to2D(projection, 1, false, false);
 
         if (projSucceeded && projection.x > 0.f && projection.x < mc.getWindow().getFramebufferWidth() && projection.y > 0.f && projection.y < mc.getWindow().getFramebufferHeight())
             return;
 
-        projection = new Vector3d(targetPlayer.prevX, targetPlayer.prevY, targetPlayer.prevZ);
+        projection = new Vector3d(targetPlayer.lastX, targetPlayer.lastY, targetPlayer.lastZ);
         NametagUtils.to2D(projection, 1, false, true);
 
         Vector2f angle = Modules.get().get(PlayerTracers.class).vectorAngles(new Vector3d(screenCenter.x - projection.x, screenCenter.y - projection.y, 0));
@@ -115,6 +115,6 @@ public class LocatePlayerCommand extends Command {
         Renderer2D.COLOR.triangle(trianglePoints[0].x, trianglePoints[0].y, trianglePoints[1].x, trianglePoints[1].y, trianglePoints[2].x,
                 trianglePoints[2].y, color);
 
-        Renderer2D.COLOR.render(null);
+        Renderer2D.COLOR.render();
     }
 }

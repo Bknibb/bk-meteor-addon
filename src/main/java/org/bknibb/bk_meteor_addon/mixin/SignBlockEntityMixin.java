@@ -26,24 +26,44 @@ public abstract class SignBlockEntityMixin extends BlockEntity {
         super(type, pos, state);
     }
 
-    @Redirect(method = "method_49850", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/entity/SignBlockEntity;parseLines(Lnet/minecraft/block/entity/SignText;)Lnet/minecraft/block/entity/SignText;"))
-    private SignText onFrontWordsReadParse(SignBlockEntity instance, SignText signText) {
+//    @Redirect(method = "readNbt", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/entity/SignBlockEntity;parseLines(Lnet/minecraft/block/entity/SignText;)Lnet/minecraft/block/entity/SignText;"))
+//    private SignText onFrontWordsReadParse(SignBlockEntity instance, SignText signText) {
+//        if (Modules.get().get(BadWordFinder.class).isActive()) {
+//            Text[] texts = signText.getMessages(false);
+//            //frontBadWords = BadWordFinder.badWordCheck(texts, instance.getPos());
+//            BadWordFinder.BadWordCheck(texts, instance.getPos(), false);
+//        }
+//        return parseLines(signText);
+//    }
+
+    @Redirect(method="readNbt", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 0))
+    private java.util.Optional<SignText> onFrontWordsReadParse(java.util.Optional<SignText> instance, java.util.function.Function<? super SignText, ? extends SignText> mapper) {
         if (Modules.get().get(BadWordFinder.class).isActive()) {
-            Text[] texts = signText.getMessages(false);
+            Text[] texts = instance.orElseGet(SignText::new).getMessages(false);
             //frontBadWords = BadWordFinder.badWordCheck(texts, instance.getPos());
-            BadWordFinder.BadWordCheck(texts, instance.getPos(), false);
+            BadWordFinder.BadWordCheck(texts, this.getPos(), false);
         }
-        return parseLines(signText);
+        return instance.map(mapper);
     }
 
-    @Redirect(method = "method_49851", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/entity/SignBlockEntity;parseLines(Lnet/minecraft/block/entity/SignText;)Lnet/minecraft/block/entity/SignText;"))
-    private SignText onBackWordsReadParse(SignBlockEntity instance, SignText signText) {
+//    @Redirect(method = "method_49851", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/entity/SignBlockEntity;parseLines(Lnet/minecraft/block/entity/SignText;)Lnet/minecraft/block/entity/SignText;"))
+//    private SignText onBackWordsReadParse(SignBlockEntity instance, SignText signText) {
+//        if (Modules.get().get(BadWordFinder.class).isActive()) {
+//            Text[] texts = signText.getMessages(false);
+//            //backBadWords = BadWordFinder.badWordCheck(texts, instance.getPos());
+//            BadWordFinder.BadWordCheck(texts, instance.getPos(), true);
+//        }
+//        return parseLines(signText);
+//    }
+
+    @Redirect(method="readNbt", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 1))
+    private java.util.Optional<SignText> onBackWordsReadParse(java.util.Optional<SignText> instance, java.util.function.Function<? super SignText, ? extends SignText> mapper) {
         if (Modules.get().get(BadWordFinder.class).isActive()) {
-            Text[] texts = signText.getMessages(false);
-            //backBadWords = BadWordFinder.badWordCheck(texts, instance.getPos());
-            BadWordFinder.BadWordCheck(texts, instance.getPos(), true);
+            Text[] texts = instance.orElseGet(SignText::new).getMessages(false);
+            //frontBadWords = BadWordFinder.badWordCheck(texts, instance.getPos());
+            BadWordFinder.BadWordCheck(texts, this.getPos(), true);
         }
-        return parseLines(signText);
+        return instance.map(mapper);
     }
 
     @Inject(method = "setFrontText", at = @At("RETURN"))
