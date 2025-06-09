@@ -62,6 +62,7 @@ public class BkMeteorAddon extends MeteorAddon {
         Modules.get().add(new NetworkLoginLogoutNotifier());
         Modules.get().add(new BadWordFinder());
         Modules.get().add(new VivecraftVanishDetect());
+        Modules.get().add(new MineplayBetterBorder());
 
         // Commands
         Commands.add(new LocatePlayerCommand());

@@ -12,6 +12,7 @@ This meteor addon adds a few useful commands and modules, with some features for
  - `NetworkLoginLogoutNotifier`: Notifies you when a player logs in or out of the network (for mineplay, also may work on other server networks).
  - `BadWordFinder`: Finds bad words in chat messages and nearby signs.
  - `VivecraftVanishDetect`: Detects if a player is in vanish mode using /vr list (the server and the player vanishing must have vivecraft).
+ - `MineplayBetterBorder`: Makes the world border have smaller collisions to stop spawn teleporting (for mineplay).
 
 ## Commands
 
@@ -26,6 +27,7 @@ This meteor addon adds a few useful commands and modules, with some features for
  - `.mp-rban`: Will rban a roblox player using mineplay admin rban presets (requires /rban).
  - `.mp-rwarn`: Will warn a roblox player using mineplay admin warn presets.
  - `.mp-warn`: Will warn a player using mineplay admin warn presets (requires /warn).
+ - `.bk-update-resources`: Updates the updatable resources of Bk Meteor Addon.
 
 ## Other Features
  - Improves meteor-rejects ChatBot to allow you to get the sender with `<sender>`

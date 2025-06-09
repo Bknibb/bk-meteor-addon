@@ -5,17 +5,16 @@
   "client": [
     "BetterBreakAccessor",
     "BetterBreakMixin",
+    "ClientPlayerEntityMixin",
     "EntityRenderDispatcherMixin",
+    "HttpMixin",
     "LivingEntityRendererMixin",
-    "TitleScreenMixin",
     "NametagsMixin",
-    "PlayerListHudMixin"
+    "PlayerListHudMixin",
+    "SignBlockEntityMixin",
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-    "HttpMixin",
-    "SignBlockEntityMixin"
-  ]
+  }
 }
