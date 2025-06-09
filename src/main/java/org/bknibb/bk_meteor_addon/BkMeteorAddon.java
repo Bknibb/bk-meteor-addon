@@ -11,24 +11,27 @@ import org.bknibb.bk_meteor_addon.commands.*;
 import org.bknibb.bk_meteor_addon.modules.*;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class BkMeteorAddon extends MeteorAddon {
+    public static final String MOD_ID = "bk-meteor-addon";
     public static final Logger LOG = LogUtils.getLogger();
     public static final Category CATEGORY = new Category("BkMeteorAddon");
     public static BkMeteorAddon INSTNACE;
     public static final boolean UPDATER_ENABLED = false;
+    public static final File FOLDER = FabricLoader.getInstance().getGameDir().resolve(BkMeteorAddon.MOD_ID).toFile();
 
     @Override
     public void onInitialize() {
         INSTNACE = this;
         LOG.info("Initializing Bk Meteor Addon");
 
-        Path modPath = FabricLoader.getInstance().getModContainer("bk-meteor-addon").get().getOrigin().getPaths().getFirst();
+        Path modPath = FabricLoader.getInstance().getModContainer(MOD_ID).get().getOrigin().getPaths().getFirst();
         Path modDir = modPath.getParent();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modDir, "bk-meteor-addon-*.jar")) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modDir, MOD_ID+"-*.jar")) {
             for (Path path : stream) {
                 if (!path.equals(modPath)) {
                     Files.deleteIfExists(path);
@@ -39,7 +42,14 @@ public class BkMeteorAddon extends MeteorAddon {
             LOG.error("Error reading mod directory: " + e.getMessage());
         }
 
+        if (!FOLDER.exists()) {
+            FOLDER.getParentFile().mkdirs();
+            FOLDER.mkdir();
+        }
+
         ConfigModifier.get();
+
+        UpdatableResourcesManager.get();
 
         //UpdateSystem.checkForUpdates(this);
 
@@ -65,6 +75,7 @@ public class BkMeteorAddon extends MeteorAddon {
         Commands.add(new MineplayWarnPresetsCommand());
         Commands.add(new MineplayIpCommand());
         Commands.add(new MineplayBlocksCommand());
+        Commands.add(new BkUpdateResourcesCommand());
     }
 
     @Override
@@ -81,7 +92,7 @@ public class BkMeteorAddon extends MeteorAddon {
     public String getCommit() {
         String commit = FabricLoader
                 .getInstance()
-                .getModContainer("bk-meteor-addon")
+                .getModContainer(MOD_ID)
                 .get().getMetadata()
                 .getCustomValue("github:sha")
                 .getAsString();

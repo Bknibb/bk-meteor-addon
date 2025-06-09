@@ -18,6 +18,7 @@ import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.block.AbstractSignBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SignBlock;
 import net.minecraft.block.entity.BlockEntity;
@@ -35,6 +36,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.MineplayUtils;
+import org.bknibb.bk_meteor_addon.UpdatableResourcesManager;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -194,14 +196,15 @@ public class BadWordFinder extends Module {
 
     @EventHandler
     private void render(Render3DEvent event) {
+        if (mc.options.hudHidden) return;
+        if (mc.world == null) return;
         if (!checkSigns.get()) return;
         ESPBlockData signBlockData = signBlockConfig.get();
-        if (mc.world == null) return;
         for (Map.Entry<BlockPos, BadSign> entry : badSigns.entrySet()) {
             BlockPos pos = entry.getKey();
             //BadSign badSign = entry.getValue();
             BlockState state = mc.world.getBlockState(pos);
-            if (state == null || !state.hasBlockEntity() || !(state.getBlock() instanceof SignBlock)) {
+            if (state == null || !state.hasBlockEntity() || !(state.getBlock() instanceof AbstractSignBlock)) {
                 badSigns.remove(pos);
                 return;
             }
@@ -266,15 +269,7 @@ public class BadWordFinder extends Module {
     public List<String> getBadWordsList() {
         if (badWordList.get() == BadWordList.Strict) {
             if (strictBadWords == null) {
-                Identifier id = Identifier.of("bk-meteor-addon", "strict.json");
-                Resource recource = mc.getResourceManager().getResource(id).orElse(null);
-                if (recource == null) {
-                    BkMeteorAddon.LOG.error("Failed to load bad words list: " + id);
-                    info("Failed to load bad words list.");
-                    toggle();
-                    return new ArrayList<>();
-                }
-                try (InputStream stream = recource.getInputStream()) {
+                try (InputStream stream = UpdatableResourcesManager.get().getResource("strict.json", () -> strictBadWords = null)) {
                     strictBadWords = GSON.fromJson(new String(stream.readAllBytes(), StandardCharsets.UTF_8), new TypeToken<List<String>>() {}.getType());
                 } catch (Exception e) {
                     BkMeteorAddon.LOG.error("Failed to load bad words list: " + e.getMessage());
@@ -288,15 +283,7 @@ public class BadWordFinder extends Module {
             return strictBadWords;
         } else if (badWordList.get() == BadWordList.ModeratelyStrict) {
             if (moderatelyStrictBadWords == null) {
-                Identifier id = Identifier.of("bk-meteor-addon", "moderately-strict.json");
-                Resource recource = mc.getResourceManager().getResource(id).orElse(null);
-                if (recource == null) {
-                    BkMeteorAddon.LOG.error("Failed to load bad words list: " + id);
-                    info("Failed to load bad words list.");
-                    toggle();
-                    return new ArrayList<>();
-                }
-                try (InputStream stream = recource.getInputStream()) {
+                try (InputStream stream = UpdatableResourcesManager.get().getResource("moderately-strict.json", () -> moderatelyStrictBadWords = null)) {
                     moderatelyStrictBadWords = GSON.fromJson(new String(stream.readAllBytes(), StandardCharsets.UTF_8), new TypeToken<List<String>>() {}.getType());
                 } catch (Exception e) {
                     BkMeteorAddon.LOG.error("Failed to load bad words list: " + e.getMessage());
@@ -310,15 +297,7 @@ public class BadWordFinder extends Module {
             return moderatelyStrictBadWords;
         } else if (badWordList.get() == BadWordList.LessStrict) {
             if (lessStrictBadWords == null) {
-                Identifier id = Identifier.of("bk-meteor-addon", "less-strict.json");
-                Resource recource = mc.getResourceManager().getResource(id).orElse(null);
-                if (recource == null) {
-                    BkMeteorAddon.LOG.error("Failed to load bad words list: " + id);
-                    info("Failed to load bad words list.");
-                    toggle();
-                    return new ArrayList<>();
-                }
-                try (InputStream stream = recource.getInputStream()) {
+                try (InputStream stream = UpdatableResourcesManager.get().getResource("less-strict.json", () -> lessStrictBadWords = null)) {
                     lessStrictBadWords = GSON.fromJson(new String(stream.readAllBytes(), StandardCharsets.UTF_8), new TypeToken<List<String>>() {}.getType());
                 } catch (Exception e) {
                     BkMeteorAddon.LOG.error("Failed to load bad words list: " + e.getMessage());
@@ -336,15 +315,7 @@ public class BadWordFinder extends Module {
 
     public Map<Character, Character> getConfusables() {
         if (confusables == null) {
-            Identifier id = Identifier.of("bk-meteor-addon", "confusables.json");
-            Resource recource = mc.getResourceManager().getResource(id).orElse(null);
-            if (recource == null) {
-                BkMeteorAddon.LOG.error("Failed to load confusables list: " + id);
-                info("Failed to load confusables list.");
-                toggle();
-                return new HashMap<>();
-            }
-            try (InputStream stream = recource.getInputStream()) {
+            try (InputStream stream = UpdatableResourcesManager.get().getResource("confusables.json", () -> confusables = null)) {
                 confusables = GSON.fromJson(new String(stream.readAllBytes(), StandardCharsets.UTF_8), new TypeToken<Map<Character, Character>>() {}.getType());
             } catch (Exception e) {
                 BkMeteorAddon.LOG.error("Failed to load confusables list: " + e.getMessage());

@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 public class VivecraftVanishDetect extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
+    private final SettingGroup sgServerWhitelist = settings.createGroup("Server Whitelist");
 
     private final Setting<Integer> scanInterval = sgGeneral.add(new IntSetting.Builder()
         .name("scan-interval")
@@ -80,13 +81,45 @@ public class VivecraftVanishDetect extends Module {
         .build()
     );
 
+    private final Setting<ListMode> serverListMode = sgServerWhitelist.add(new EnumSetting.Builder<ListMode>()
+        .name("list-mode")
+        .description("Selection mode.")
+        .defaultValue(ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverBlacklist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("blacklist")
+        .description("The servers you don't want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverWhitelist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("whitelist")
+        .description("The players you want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Whitelist)
+        .build()
+    );
+
     private int timer;
     private Integer waitingPacket = 0;
     public List<String> vanishedPlayers = new ArrayList<>();
     private final List<String> tempVrPlayers = new ArrayList<>();
 
     public VivecraftVanishDetect() {
-        super(BkMeteorAddon.CATEGORY, "Vivecraft Vanish Detect", "Detects if a player is in vanish mode using /vr list (the server and the player vanishing must have vivecraft).");
+        super(BkMeteorAddon.CATEGORY, "vivecraft-vanish-detect", "Detects if a player is in vanish mode using /vr list (the server and the player vanishing must have vivecraft).");
+    }
+
+    private boolean ServerAllowed() {
+        if (mc.getCurrentServerEntry() == null) {
+            return false;
+        }
+        if (serverListMode.get() == ListMode.Blacklist) {
+            return !serverBlacklist.get().contains(mc.getCurrentServerEntry().address);
+        } else {
+            return serverWhitelist.get().contains(mc.getCurrentServerEntry().address);
+        }
     }
 
     @Override
@@ -116,6 +149,26 @@ public class VivecraftVanishDetect extends Module {
                 whitelist.fromTag(tag.getCompound("whitelist").get());
             }
         };
+        list.add(theme.button("Copy Server List Settings")).widget().action = () -> {
+            NbtCompound tag = new NbtCompound();
+            tag.put("serverListMode", serverListMode.toTag());
+            tag.put("serverBlacklist", serverBlacklist.toTag());
+            tag.put("serverWhitelist", serverWhitelist.toTag());
+            NbtUtils.toClipboard(tag);
+        };
+        list.add(theme.button("Paste Server List Settings")).widget().action = () -> {
+            NbtCompound tag = NbtUtils.fromClipboard();
+            if (tag == null) return;
+            if (tag.contains("serverListMode")) {
+                serverListMode.fromTag(tag.getCompound("serverListMode"));
+            }
+            if (tag.contains("serverBlacklist")) {
+                serverBlacklist.fromTag(tag.getCompound("serverBlacklist"));
+            }
+            if (tag.contains("serverWhitelist")) {
+                serverWhitelist.fromTag(tag.getCompound("serverWhitelist"));
+            }
+        };
         return list;
     }
 
@@ -126,6 +179,7 @@ public class VivecraftVanishDetect extends Module {
         if (mc.getCurrentServerEntry() == null) return;
         if (mc.getCurrentServerEntry().isLocal()) return;
         if (mc.getNetworkHandler() == null) return;
+        if (!ServerAllowed()) return;
         timer++;
         if (timer > scanInterval.get()) {
             timer = 0;

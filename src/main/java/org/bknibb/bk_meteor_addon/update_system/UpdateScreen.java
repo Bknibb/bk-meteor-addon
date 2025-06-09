@@ -9,8 +9,10 @@ import meteordevelopment.meteorclient.utils.render.MeteorToast;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Items;
+import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.ConfigModifier;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -78,7 +80,7 @@ public class UpdateScreen extends WindowScreen {
                     return;
                 }
                 case Http.SUCCESS -> {
-                    Path modPath = FabricLoader.getInstance().getModContainer("bk-meteor-addon").get().getOrigin().getPaths().getFirst();
+                    Path modPath = FabricLoader.getInstance().getModContainer(BkMeteorAddon.MOD_ID).get().getOrigin().getPaths().getFirst();
                     Path target = modPath.getParent().resolve(relaseResponse.assets.getFirst().name);
                     try (OutputStream os = Files.newOutputStream(target); InputStream is = res.body()) {
                         is.transferTo(os);
@@ -107,6 +109,9 @@ public class UpdateScreen extends WindowScreen {
 ////                            return;
 ////                        }
 //                    }
+                    if (!modPath.equals(target)) {
+                        modPath.toFile().deleteOnExit();
+                    }
                 }
                 default -> {
                     close();

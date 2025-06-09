@@ -28,6 +28,7 @@ import java.util.Random;
 public class NetworkLoginLogoutNotifier extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
+    private final SettingGroup sgServerWhitelist = settings.createGroup("Server Whitelist");
 
     private final Setting<Integer> scanInterval = sgGeneral.add(new IntSetting.Builder()
         .name("scan-interval")
@@ -89,6 +90,27 @@ public class NetworkLoginLogoutNotifier extends Module {
         .build()
     );
 
+    private final Setting<ListMode> serverListMode = sgServerWhitelist.add(new EnumSetting.Builder<ListMode>()
+        .name("list-mode")
+        .description("Selection mode.")
+        .defaultValue(ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverBlacklist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("blacklist")
+        .description("The servers you don't want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverWhitelist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("whitelist")
+        .description("The players you want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Whitelist)
+        .build()
+    );
+
     private int timer;
     private static final Random RANDOM = new Random();
     private Integer waitingPacket = null;
@@ -126,7 +148,38 @@ public class NetworkLoginLogoutNotifier extends Module {
                 whitelist.fromTag(tag.getCompound("whitelist").get());
             }
         };
+        list.add(theme.button("Copy Server List Settings")).widget().action = () -> {
+            NbtCompound tag = new NbtCompound();
+            tag.put("serverListMode", serverListMode.toTag());
+            tag.put("serverBlacklist", serverBlacklist.toTag());
+            tag.put("serverWhitelist", serverWhitelist.toTag());
+            NbtUtils.toClipboard(tag);
+        };
+        list.add(theme.button("Paste Server List Settings")).widget().action = () -> {
+            NbtCompound tag = NbtUtils.fromClipboard();
+            if (tag == null) return;
+            if (tag.contains("serverListMode")) {
+                serverListMode.fromTag(tag.getCompound("serverListMode"));
+            }
+            if (tag.contains("serverBlacklist")) {
+                serverBlacklist.fromTag(tag.getCompound("serverBlacklist"));
+            }
+            if (tag.contains("serverWhitelist")) {
+                serverWhitelist.fromTag(tag.getCompound("serverWhitelist"));
+            }
+        };
         return list;
+    }
+
+    private boolean ServerAllowed() {
+        if (mc.getCurrentServerEntry() == null) {
+            return false;
+        }
+        if (serverListMode.get() == ListMode.Blacklist) {
+            return !serverBlacklist.get().contains(mc.getCurrentServerEntry().address);
+        } else {
+            return serverWhitelist.get().contains(mc.getCurrentServerEntry().address);
+        }
     }
 
     @EventHandler
@@ -135,6 +188,7 @@ public class NetworkLoginLogoutNotifier extends Module {
         if (mc.isInSingleplayer()) return;
         if (mc.getCurrentServerEntry() == null) return;
         if (mc.getCurrentServerEntry().isLocal()) return;
+        if (!ServerAllowed()) return;
         if (mc.getNetworkHandler() == null) return;
         timer++;
         if (timer > scanInterval.get()) {

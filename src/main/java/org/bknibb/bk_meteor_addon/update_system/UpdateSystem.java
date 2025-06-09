@@ -70,7 +70,7 @@ public class UpdateSystem {
                     }
                     Version version = FabricLoader
                         .getInstance()
-                        .getModContainer("bk-meteor-addon")
+                        .getModContainer(BkMeteorAddon.MOD_ID)
                         .get()
                         .getMetadata()
                         .getVersion();

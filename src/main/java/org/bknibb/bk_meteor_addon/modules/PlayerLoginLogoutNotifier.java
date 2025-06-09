@@ -34,6 +34,7 @@ import java.util.UUID;
 public class PlayerLoginLogoutNotifier extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
+    private final SettingGroup sgServerWhitelist = settings.createGroup("Server Whitelist");
 
     private final Setting<JoinLeaveModes> joinsLeavesMode = sgGeneral.add(new EnumSetting.Builder<JoinLeaveModes>()
         .name("player-joins-leaves")
@@ -117,6 +118,27 @@ public class PlayerLoginLogoutNotifier extends Module {
         .build()
     );
 
+    private final Setting<ListMode> serverListMode = sgServerWhitelist.add(new EnumSetting.Builder<ListMode>()
+        .name("list-mode")
+        .description("Selection mode.")
+        .defaultValue(ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverBlacklist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("blacklist")
+        .description("The servers you don't want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Blacklist)
+        .build()
+    );
+
+    private final Setting<List<String>> serverWhitelist = sgServerWhitelist.add(new StringListSetting.Builder()
+        .name("whitelist")
+        .description("The players you want this to work on.")
+        .visible(() -> serverListMode.get() == ListMode.Whitelist)
+        .build()
+    );
+
     private int timer;
     //private boolean loginPacket = true;
     private final ArrayListDeque<Text> messageQueue = new ArrayListDeque<>();
@@ -154,6 +176,26 @@ public class PlayerLoginLogoutNotifier extends Module {
                 whitelist.fromTag(tag.getCompound("whitelist").get());
             }
         };
+        list.add(theme.button("Copy Server List Settings")).widget().action = () -> {
+            NbtCompound tag = new NbtCompound();
+            tag.put("serverListMode", serverListMode.toTag());
+            tag.put("serverBlacklist", serverBlacklist.toTag());
+            tag.put("serverWhitelist", serverWhitelist.toTag());
+            NbtUtils.toClipboard(tag);
+        };
+        list.add(theme.button("Paste Server List Settings")).widget().action = () -> {
+            NbtCompound tag = NbtUtils.fromClipboard();
+            if (tag == null) return;
+            if (tag.contains("serverListMode")) {
+                serverListMode.fromTag(tag.getCompound("serverListMode"));
+            }
+            if (tag.contains("serverBlacklist")) {
+                serverBlacklist.fromTag(tag.getCompound("serverBlacklist"));
+            }
+            if (tag.contains("serverWhitelist")) {
+                serverWhitelist.fromTag(tag.getCompound("serverWhitelist"));
+            }
+        };
         return list;
     }
 
@@ -171,6 +213,7 @@ public class PlayerLoginLogoutNotifier extends Module {
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
+        if (!ServerAllowed()) return;
         switch (event.packet) {
             case PlayerListS2CPacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Joins) -> {
 
@@ -181,6 +224,17 @@ public class PlayerLoginLogoutNotifier extends Module {
             case PlayerRemoveS2CPacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Leaves) ->
                 createLeaveNotification(packet);
             default -> {}
+        }
+    }
+
+    private boolean ServerAllowed() {
+        if (mc.getCurrentServerEntry() == null) {
+            return false;
+        }
+        if (serverListMode.get() == ListMode.Blacklist) {
+            return !serverBlacklist.get().contains(mc.getCurrentServerEntry().address);
+        } else {
+            return serverWhitelist.get().contains(mc.getCurrentServerEntry().address);
         }
     }
 
@@ -202,7 +256,7 @@ public class PlayerLoginLogoutNotifier extends Module {
             }
             taskQueue.removeFirst().getRight().run();
         }
-        if (Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class) && Modules.get().get(MineplayRemoveOfflineRobloxPlayers.class).hidePlayerLoginLogoutMessages.get() && mc.getNetworkHandler() != null) {
+        if (Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class) && Modules.get().get(MineplayRemoveOfflineRobloxPlayers.class).hidePlayerLoginLogoutMessages.get() && mc.getNetworkHandler() != null && ServerAllowed()) {
             List<String> prevPlayers = onlineRobloxPlayers;
             onlineRobloxPlayers = new ArrayList<>();
             for (PlayerListEntry entry : mc.getNetworkHandler().getPlayerList()) {
