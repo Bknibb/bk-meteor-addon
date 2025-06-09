@@ -159,13 +159,13 @@ public class NetworkLoginLogoutNotifier extends Module {
             NbtCompound tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("serverListMode")) {
-                serverListMode.fromTag(tag.getCompound("serverListMode"));
+                serverListMode.fromTag(tag.getCompound("serverListMode").get());
             }
             if (tag.contains("serverBlacklist")) {
-                serverBlacklist.fromTag(tag.getCompound("serverBlacklist"));
+                serverBlacklist.fromTag(tag.getCompound("serverBlacklist").get());
             }
             if (tag.contains("serverWhitelist")) {
-                serverWhitelist.fromTag(tag.getCompound("serverWhitelist"));
+                serverWhitelist.fromTag(tag.getCompound("serverWhitelist").get());
             }
         };
         return list;
