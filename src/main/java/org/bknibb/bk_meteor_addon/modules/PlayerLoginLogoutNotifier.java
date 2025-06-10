@@ -256,42 +256,6 @@ public class PlayerLoginLogoutNotifier extends Module {
             }
             taskQueue.removeFirst().getRight().run();
         }
-        if (Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class) && Modules.get().get(MineplayRemoveOfflineRobloxPlayers.class).hidePlayerLoginLogoutMessages.get() && mc.getNetworkHandler() != null && ServerAllowed()) {
-            List<String> prevPlayers = onlineRobloxPlayers;
-            onlineRobloxPlayers = new ArrayList<>();
-            for (PlayerListEntry entry : mc.getNetworkHandler().getPlayerList()) {
-                if (listMode.get() == ListMode.Blacklist) {
-                    if (blacklist.get().contains(entry.getProfile().getName())) {
-                        continue;
-                    }
-                } else {
-                    if (!(whitelist.get().contains(entry.getProfile().getName()) || (includeFriends.get() && Friends.get().get(entry.getProfile().getName()) != null))) {
-                        continue;
-                    }
-                }
-                if (!MineplayUtils.isDisconnectedPlayer(entry)) {
-                    onlineRobloxPlayers.add(entry.getProfile().getName());
-                }
-            }
-            for (String player : prevPlayers) {
-                if (listMode.get() == ListMode.Blacklist) {
-                    if (blacklist.get().contains(player)) {
-                        continue;
-                    }
-                } else {
-                    if (!(whitelist.get().contains(player) || (includeFriends.get() && Friends.get().get(player) != null))) {
-                        continue;
-                    }
-                }
-                PlayerListEntry toRemove = mc.getNetworkHandler().getPlayerListEntry(player);
-                if (toRemove == null) continue;
-                if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT) continue;
-                if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX) continue;
-                if (!onlineRobloxPlayers.contains(player)) {
-                    doCreateLeaveNotification(toRemove);
-                }
-            }
-        }
     }
 
     private void createJoinNotifications(PlayerListS2CPacket packet) {
@@ -305,8 +269,6 @@ public class PlayerLoginLogoutNotifier extends Module {
                 if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT)
                     return;
                 if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX)
-                    return;
-                if (MineplayUtils.isDisconnectedPlayer(entry) && Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class) && Modules.get().get(MineplayRemoveOfflineRobloxPlayers.class).hidePlayerLoginLogoutMessages.get())
                     return;
                 if (listMode.get() == ListMode.Blacklist) {
                     if (blacklist.get().contains(entry.getProfile().getName())) {
@@ -332,7 +294,6 @@ public class PlayerLoginLogoutNotifier extends Module {
             if (ignoreSelf.get() && toRemove.getProfile().getId().equals(mc.player.getUuid())) continue;
             if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT) continue;
             if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX) continue;
-            if (MineplayUtils.isDisconnectedPlayer(toRemove) && Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class) && Modules.get().get(MineplayRemoveOfflineRobloxPlayers.class).hidePlayerLoginLogoutMessages.get()) return;
             if (listMode.get() == ListMode.Blacklist) {
                 if (blacklist.get().contains(toRemove.getProfile().getName())) {
                     continue;

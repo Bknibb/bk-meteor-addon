@@ -20,16 +20,13 @@ import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.AbstractSignBlock;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.SignBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.UpdateSignC2SPacket;
-import net.minecraft.resource.Resource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.ArrayListDeque;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -44,7 +41,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -91,21 +87,21 @@ public class BadWordFinder extends Module {
         .build()
     );
 
-    private final Setting<Boolean> breakSigns = sgGeneral.add(new BoolSetting.Builder()
-        .name("break-signs")
-        .description("Breaks the signs when found (mineplay only).")
-        .defaultValue(false)
+    private final Setting<SignMode> signMode = sgGeneral.add(new EnumSetting.Builder<SignMode>()
+        .name("sign-mode")
+        .description("What to do with the signs when found (mineplay only).")
+        .defaultValue(SignMode.None)
         .visible(checkSigns::get)
-        .onChanged(state -> {if (state) refreshSigns();})
+        .onChanged(state -> {if (state != SignMode.None) refreshSigns();})
         .build()
     );
 
-    private final Setting<Boolean> eraseSigns = sgGeneral.add(new BoolSetting.Builder()
-        .name("erase-signs")
-        .description("Erases the signs when found (doesn't work with break signs) (mineplay only).")
-        .defaultValue(false)
-        .visible(checkSigns::get)
-        .onChanged(state -> {if (state) refreshSigns();})
+    private final Setting<String> signCensorCharacter = sgGeneral.add(new StringSetting.Builder()
+        .name("sign-censor-character")
+        .description("What character to replace bad words in signs with (mineplay only).")
+        .defaultValue("#")
+        .visible(() -> checkSigns.get() && signMode.get() == SignMode.Censor)
+        .onChanged(state -> refreshSigns())
         .build()
     );
 
@@ -347,7 +343,7 @@ public class BadWordFinder extends Module {
         "|e[^\\w\\s_]*d" +                   // ed
         ")?";
 
-    private boolean doCheckWord(String word, String message) {
+    private Matcher generateMatcher(String word, String message) {
         String regex = "(?i)(?<=^|\\W)" + Pattern.quote(word.replace("<nospaces>", "")) + "(?=\\W|$)";
         if (extraRegexChecks.get()) {
             String interleaved;
@@ -378,7 +374,21 @@ public class BadWordFinder extends Module {
             message = sb.toString();
         }
         Matcher matcher = pattern.matcher(message);
+        return matcher;
+    }
+
+    private boolean doCheckWord(String word, String message) {
+        Matcher matcher = generateMatcher(word, message);
         return matcher.find();
+    }
+
+    private List<int[]> getBadWordPositions(String word, String message) {
+        List<int[]> positions = new ArrayList<>();
+        Matcher matcher = generateMatcher(word, message);
+        while (matcher.find()) {
+            positions.add(new int[]{matcher.start(), matcher.end()});
+        }
+        return positions;
     }
 
     public boolean containsBadWord(String message) {
@@ -408,6 +418,7 @@ public class BadWordFinder extends Module {
     }
 
     public String getBadWord(String message) {
+        if (message == null || message.isEmpty()) return null;
         if (!isActive()) return null;
         if (listMode.get() == ListMode.Whitelist) {
             if (includeDefaultBadWordList.get()) {
@@ -433,6 +444,38 @@ public class BadWordFinder extends Module {
         return null;
     }
 
+    public String censorString(String message, String censorCharacter) {
+        if (message == null || message.isEmpty()) return message;
+        if (!isActive()) return null;
+        if (listMode.get() == ListMode.Whitelist) {
+            if (includeDefaultBadWordList.get()) {
+                for (String word : getBadWordsList()) {
+                    List<int[]> positions = getBadWordPositions(word, message);
+                    for (int[] pos : positions) {
+                        String replacement = censorCharacter.repeat(pos[1]-pos[0]);
+                        message = message.substring(0, pos[0]) + replacement + message.substring(pos[1]);
+                    }
+                }
+            }
+            for (String word : whitelist.get()) {
+                List<int[]> positions = getBadWordPositions(word, message);
+                for (int[] pos : positions) {
+                    String replacement = censorCharacter.repeat(pos[1]-pos[0]);
+                    message = message.substring(0, pos[0]) + replacement + message.substring(pos[1]);
+                }
+            }
+        } else {
+            for (String word : getBadWordsList()) {
+                List<int[]> positions = getBadWordPositions(word, message);
+                for (int[] pos : positions) {
+                    String replacement = censorCharacter.repeat(pos[1]-pos[0]);
+                    message = message.substring(0, pos[0]) + replacement + message.substring(pos[1]);
+                }
+            }
+        }
+        return message;
+    }
+
     private final Map<BlockPos, BadSign> badSigns = new ConcurrentHashMap<>();
 
     private void doBadWordCheck(Text[] texts, BlockPos pos, boolean back) {
@@ -448,7 +491,7 @@ public class BadWordFinder extends Module {
         if (hasBadWord) {
             info(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in sign at " + pos.toShortString());
             if (MineplayUtils.isOnMineplay() && mc.getNetworkHandler() != null) {
-                if (breakSigns.get()) {
+                if (signMode.get() == SignMode.Break) {
                     if (mc.player != null) {
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.getX(), pos.getY(), pos.getZ(), false, mc.player.horizontalCollision));
                         mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP));
@@ -456,7 +499,7 @@ public class BadWordFinder extends Module {
                         badSigns.remove(pos);
                         return;
                     }
-                } else if (eraseSigns.get()) {
+                } else if (signMode.get() == SignMode.Erase) {
                     mc.getNetworkHandler().sendPacket(new UpdateSignC2SPacket(pos, !back, "", "", "", ""));
                     if (badSigns.containsKey(pos)) {
                         BadSign badSign = badSigns.get(pos);
@@ -470,6 +513,9 @@ public class BadWordFinder extends Module {
                         }
                     }
                     return;
+                } else if (signMode.get() == SignMode.Censor) {
+                    String censorCharacter = signCensorCharacter.get();
+                    mc.getNetworkHandler().sendPacket(new UpdateSignC2SPacket(pos, !back, censorString(texts[0].getString(), censorCharacter), censorString(texts[1].getString(), censorCharacter), censorString(texts[2].getString(), censorCharacter), censorString(texts[3].getString(), censorCharacter)));
                 }
             }
             if (badSigns.containsKey(pos)) {
@@ -540,5 +586,12 @@ public class BadWordFinder extends Module {
         Strict,
         ModeratelyStrict,
         LessStrict
+    }
+
+    public enum SignMode {
+        None,
+        Break,
+        Erase,
+        Censor
     }
 }

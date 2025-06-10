@@ -4,7 +4,6 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.entity.player.PlayerEntity;
-import org.bknibb.bk_meteor_addon.modules.MineplayRemoveOfflineRobloxPlayers;
 
 public class MineplayUtils {
 public static boolean isRobloxPlayer(PlayerListEntry entry) {
@@ -45,20 +44,20 @@ public static boolean isRobloxPlayer(PlayerListEntry entry) {
         String serverName = client.getCurrentServerEntry().address;
         return serverName.contains("mineplay.nl");
     }
-    public static boolean canHide() {
-        return (isOnMineplay() && Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class));
-    }
-    public static boolean hidePlayer(PlayerEntity player) {
-        return (canHide() && player != MinecraftClient.getInstance().player && isDisconnectedPlayer(player));
-    }
-    public static boolean hidePlayer(PlayerListEntry entry) {
-        PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
-        if (clientPlayer == null) return false;
-        return (canHide() && entry.getProfile().getId() != clientPlayer.getUuid() && isDisconnectedPlayer(entry));
-    }
-    public static boolean hidePlayer(String player) {
-        PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
-        if (clientPlayer == null) return false;
-        return (canHide() && !player.equals(clientPlayer.getName().getString()) && isDisconnectedPlayer(player));
-    }
+//    public static boolean canHide() {
+//        return (isOnMineplay() && Modules.get().isActive(MineplayRemoveOfflineRobloxPlayers.class));
+//    }
+//    public static boolean hidePlayer(PlayerEntity player) {
+//        return (canHide() && player != MinecraftClient.getInstance().player && isDisconnectedPlayer(player));
+//    }
+//    public static boolean hidePlayer(PlayerListEntry entry) {
+//        PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
+//        if (clientPlayer == null) return false;
+//        return (canHide() && entry.getProfile().getId() != clientPlayer.getUuid() && isDisconnectedPlayer(entry));
+//    }
+//    public static boolean hidePlayer(String player) {
+//        PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
+//        if (clientPlayer == null) return false;
+//        return (canHide() && !player.equals(clientPlayer.getName().getString()) && isDisconnectedPlayer(player));
+//    }
 }
