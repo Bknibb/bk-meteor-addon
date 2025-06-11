@@ -20,7 +20,7 @@ public class MineplayRobloxWarnPresetsCommand extends Command {
             argument = argument.then(literal(preset.name()).executes(context -> {
                 if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
                 PlayerEntity player = PlayerArgumentType.get(context);
-                mc.getNetworkHandler().sendChatMessage(player.getName().getString() + " " + "Stop " + preset.asString() + ", if you continue, you will be banned");
+                mc.getNetworkHandler().sendChatMessage(player.getName().getString() + " " + "Please stop " + preset.asString() + ", if you continue, you will be banned");
                 return SINGLE_SUCCESS;
             }));
         }
@@ -28,7 +28,7 @@ public class MineplayRobloxWarnPresetsCommand extends Command {
             if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
             PlayerEntity player = PlayerArgumentType.get(context);
             String text = StringArgumentType.getString(context, "text");
-            mc.getNetworkHandler().sendChatMessage(player.getName().getString() + " " + "Stop " + text + ", if you continue, you will be banned");
+            mc.getNetworkHandler().sendChatMessage(player.getName().getString() + " " + "Please stop " + text + ", if you continue, you will be banned");
             return SINGLE_SUCCESS;
         }));
         builder.then(argument);
@@ -47,13 +47,13 @@ public class MineplayRobloxWarnPresetsCommand extends Command {
             if (this == Griefing) {
                 return "Griefing";
             } else if (this == InappropriateBuilds) {
-                return "Building Inappropriate Builds";
+                return "Building Inappropriately";
             } else if (this == ActingInappropriately) {
                 return "Acting Inappropriately";
             } else if (this == BeingRacist) {
-                return "Being Racist";
+                return "Acting Racist";
             } else if (this == BeingHomophobic) {
-                return "Being Homophobic";
+                return "Acting Homophobic";
             } else if (this == Spamming) {
                 return "Spamming";
             }

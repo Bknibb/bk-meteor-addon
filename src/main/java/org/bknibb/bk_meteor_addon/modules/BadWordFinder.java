@@ -516,6 +516,18 @@ public class BadWordFinder extends Module {
                 } else if (signMode.get() == SignMode.Censor) {
                     String censorCharacter = signCensorCharacter.get();
                     mc.getNetworkHandler().sendPacket(new UpdateSignC2SPacket(pos, !back, censorString(texts[0].getString(), censorCharacter), censorString(texts[1].getString(), censorCharacter), censorString(texts[2].getString(), censorCharacter), censorString(texts[3].getString(), censorCharacter)));
+                    if (badSigns.containsKey(pos)) {
+                        BadSign badSign = badSigns.get(pos);
+                        if (back) {
+                            badSign.backBad = false;
+                        } else {
+                            badSign.frontBad = false;
+                        }
+                        if (!badSign.frontBad && !badSign.backBad) {
+                            badSigns.remove(pos);
+                        }
+                    }
+                    return;
                 }
             }
             if (badSigns.containsKey(pos)) {
