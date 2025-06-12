@@ -134,10 +134,7 @@ public class UpdatableResourcesManager {
             case Http.NOT_FOUND -> LOG.warn("Could not fetch updates (Updatable Resources): GitHub repository '{}' not found.", REPO.getOwnerName());
             case Http.SUCCESS -> {
                 Version latestVersion = new Version(res.body().strip());
-                if (VERSION == null || force) {
-                    DoUpdate(latestVersion);
-                    return true;
-                } else if (latestVersion.isHigherThan(VERSION)) {
+                if (VERSION == null || force || latestVersion.isHigherThan(VERSION)) {
                     DoUpdate(latestVersion);
                     return true;
                 }

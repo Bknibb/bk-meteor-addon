@@ -60,13 +60,13 @@ public class BkMeteorAddon extends MeteorAddon {
         Modules.get().add(new MineplayBetterBreak());
         Modules.get().add(new NetworkLoginLogoutNotifier());
         Modules.get().add(new BadWordFinder());
-        Modules.get().add(new VivecraftVanishDetect());
+        Modules.get().add(new VanishDetect());
         Modules.get().add(new MineplayBetterBorder());
 
         // Commands
         Commands.add(new LocatePlayerCommand());
         Commands.add(new NetworkOnlineCommand());
-        Commands.add(new VivecraftVanishedCommand());
+        Commands.add(new VanishedCommand());
         Commands.add(new MineplayBanPresetsCommand());
         Commands.add(new MineplayKickPresetsCommand());
         Commands.add(new MineplayMutePresetsCommand());
