@@ -277,13 +277,20 @@ public class VanishDetect extends Module {
             Instant now = Instant.now();
             List<String> unvanished = new ArrayList<>();
             List<String> cacheExpired = new ArrayList<>();
+            List<String> toRemove = new ArrayList<>();
             for (Map.Entry<String, Instant> entry : infoUpdatesCacheTime.entrySet()) {
-                if (mc.getNetworkHandler().getPlayerListEntry(entry.getKey()) != null) {
+                if (!vanishedPlayers.contains(entry.getKey())) {
+                    toRemove.add(entry.getKey());
+                }
+                else if (mc.getNetworkHandler().getPlayerListEntry(entry.getKey()) != null) {
                     unvanished.add(entry.getKey());
                 }
                 else if (now.isAfter(entry.getValue().plusMillis((long)(cacheThreshold.get()*1000)))) {
                     cacheExpired.add(entry.getKey());
                 }
+            }
+            for (String name : toRemove) {
+                infoUpdatesCacheTime.remove(name);
             }
             for (String name : unvanished) {
                 vanishedPlayers.remove(name);
