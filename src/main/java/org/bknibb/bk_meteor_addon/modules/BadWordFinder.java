@@ -344,22 +344,22 @@ public class BadWordFinder extends Module {
 
     private final String suffixPattern =
         "(?:" +
-        "o" +                                // o
-        "|i[\\W_]*n[\\W_]*g" +               // ing
-        "|s" +                               // s
-        "|e[\\W_]*r[\\W_]*s" +               // ers
-        "|e[\\W_]*r" +                       // er
-        "|e[\\W_]*d" +                       // ed
+        "o+" +                                // o
+        "|i+[\\W_]*n+[\\W_]*g+" +               // ing
+        "|s+" +                               // s
+        "|e+[\\W_]*r+[\\W_]*s+" +               // ers
+        "|e+[\\W_]*r+" +                       // er
+        "|e+[\\W_]*d+" +                       // ed
         ")?";
 
     private final String suffixPatternNoSpace =
         "(?:" +
-        "o" +                                // o
-        "|i[^\\w\\s_]*n[^\\w\\s_]*g" +       // ing
-        "|s" +                               // s
-        "|e[^\\w\\s_]*r[^\\w\\s_]*s" +       // ers
-        "|e[^\\w\\s_]*r" +                   // er
-        "|e[^\\w\\s_]*d" +                   // ed
+        "o+" +                                // o
+        "|i+[^\\w\\s_]*n+[^\\w\\s_]*g+" +       // ing
+        "|s+" +                               // s
+        "|e+[^\\w\\s_]*r+[^\\w\\s_]*s+" +       // ers
+        "|e+[^\\w\\s_]*r+" +                   // er
+        "|e+[^\\w\\s_]*d+" +                   // ed
         ")?";
 
     private Matcher generateMatcher(String word, String message) {
@@ -367,9 +367,9 @@ public class BadWordFinder extends Module {
         if (extraRegexChecks.get()) {
             String interleaved;
             if (word.startsWith("<nospaces>")) {
-                interleaved = String.join("[^\\w\\s_]*", Arrays.stream(word.replace("<nospaces>", "").split("")).map(Pattern::quote).toArray(String[]::new));
+                interleaved = String.join("[^\\w\\s_]*", Arrays.stream(word.replace("<nospaces>", "").split("")).map(c -> Pattern.quote(c) + "+").toArray(String[]::new));
             } else {
-                interleaved = String.join("[\\W_]*", Arrays.stream(word.split("")).map(Pattern::quote).toArray(String[]::new));
+                interleaved = String.join("[\\W_]*", Arrays.stream(word.split("")).map(c -> Pattern.quote(c) + "+").toArray(String[]::new));
             }
             String currentSuffixPattern = suffixPattern;
             if (word.endsWith("o") || word.endsWith("ing") || word.endsWith("s") || word.endsWith("ers") || word.endsWith("er") || word.endsWith("ed")) {
