@@ -37,11 +37,24 @@ public class ChatBotMixin {
     @Redirect(method = "onMessageRecieve", at = @At(value = "INVOKE", target = "Lmeteordevelopment/meteorclient/utils/player/ChatUtils;sendPlayerMsg(Ljava/lang/String;)V"), remap = false)
     private void sendPlayerMsg(String message, ReceiveMessageEvent event) {
         if (ConfigModifier.get().chatBotSender.get() && message.contains("<sender>")) {
-            Pattern pattern = Pattern.compile("^(?:(?:<[^>]+>|\\S+)\\s)*<?([a-zA-Z0-9_]+)>?:\\s|^(?:(?:<[^>]+>|\\S+)\\s)*<([a-zA-Z0-9_]+)>\\s");
+            Pattern pattern = Pattern.compile(
+                "^" +
+                    "(?:<\\d{1,2}:\\d{2}>\\s*)?" +                          // optional <timestamp>
+                    "(?:\\[\\s*([a-zA-Z0-9_.]+)\\s*->\\s*[a-zA-Z0-9_.]+\\s*\\]\\s*)?" + // [sender -> target] → group 1
+                    "(?:\\[[^\\]]*\\]\\s*)*" +                              // skip other bracketed tags like [M]
+                    "(?:<\\s*([a-zA-Z0-9_.]+)\\s*>\\s*|([a-zA-Z0-9_.]+):|[a-zA-Z0-9_.]+\\s+([a-zA-Z0-9_.]+):)?"
+                // group 2 = <sender>, group 3 = sender:, group 4 = tag sender:
+            );
+
             Matcher matcher = pattern.matcher(event.getMessage().getString());
             if (matcher.find()) {
-                String name = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
-                message = message.replace("<sender>", name);
+                String name = matcher.group(1) != null ? matcher.group(1) : (matcher.group(2) != null ? matcher.group(2) : (matcher.group(3) != null ? matcher.group(3) : matcher.group(4)));
+                message = message.replace("<sender>", name).replace("<pms>", "<pms:" + name + ">");
+                if (matcher.group(1) != null) {
+                    message = message.replace("<pmsipm>", "<pms:" + name + ">");
+                } else {
+                    message = message.replace("<pmsipm>", "");
+                }
             }
         }
         if (ConfigModifier.get().chatBotArgs.get() && message.contains("<args>")) {
@@ -61,7 +74,11 @@ public class ChatBotMixin {
         if (messageDelay != null) {
             messageQueue.addLast(message);
         } else {
-            ChatUtils.sendPlayerMsg(message);
+            if (message.contains("<pms:")) {
+                ChatUtils.sendPlayerMsg("/msg " + message.substring(message.indexOf("<pms:") + 5, message.indexOf(">")) + " " + message.substring(0, message.indexOf("<pms:")) + message.substring(message.indexOf(">") + 1));
+            } else {
+                ChatUtils.sendPlayerMsg(message);
+            }
         }
     }
     @Redirect(method = "onMessageRecieve", at = @At(value = "INVOKE", target = "Ljava/lang/String;endsWith(Ljava/lang/String;)Z"), remap = false)
@@ -93,7 +110,12 @@ public class ChatBotMixin {
         timer++;
         while (timer >= messageDelay.get() && !messageQueue.isEmpty()) {
             timer = 0;
-            ChatUtils.sendPlayerMsg(messageQueue.removeFirst());
+            String message = messageQueue.removeFirst();
+            if (message.contains("<pms:")) {
+                ChatUtils.sendPlayerMsg("/msg " + message.substring(message.indexOf("<pms:") + 5, message.indexOf(">")) + " " + message.substring(0, message.indexOf("<pms:")) + message.substring(message.indexOf(">") + 1));
+            } else {
+                ChatUtils.sendPlayerMsg(message);
+            }
         }
     }
     @EventHandler

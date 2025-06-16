@@ -235,6 +235,7 @@ public class BadWordFinder extends Module {
     private List<String> strictBadWords;
     private List<String> moderatelyStrictBadWords;
     private List<String> lessStrictBadWords;
+    private List<String> minimallyStrictBadWords;
     private Map<Character, Character> confusables;
     private static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -275,6 +276,7 @@ public class BadWordFinder extends Module {
                 }
                 moderatelyStrictBadWords = null;
                 lessStrictBadWords = null;
+                minimallyStrictBadWords = null;
             }
             return strictBadWords;
         } else if (badWordList.get() == BadWordList.ModeratelyStrict) {
@@ -289,6 +291,7 @@ public class BadWordFinder extends Module {
                 }
                 strictBadWords = null;
                 lessStrictBadWords = null;
+                minimallyStrictBadWords = null;
             }
             return moderatelyStrictBadWords;
         } else if (badWordList.get() == BadWordList.LessStrict) {
@@ -303,8 +306,23 @@ public class BadWordFinder extends Module {
                 }
                 strictBadWords = null;
                 moderatelyStrictBadWords = null;
+                minimallyStrictBadWords = null;
             }
             return lessStrictBadWords;
+        } else if (badWordList.get() == BadWordList.MinimallyStrict) {
+            if (minimallyStrictBadWords == null) {
+                try (InputStream stream = UpdatableResourcesManager.get().getResource("minimally-strict.json", () -> minimallyStrictBadWords = null)) {
+                    minimallyStrictBadWords = GSON.fromJson(new String(stream.readAllBytes(), StandardCharsets.UTF_8), new TypeToken<List<String>>() {}.getType());
+                } catch (Exception e) {
+                    BkMeteorAddon.LOG.error("Failed to load bad words list: " + e.getMessage());
+                    info("Failed to load bad words list.");
+                    toggle();
+                    return new ArrayList<>();
+                }
+                strictBadWords = null;
+                moderatelyStrictBadWords = null;
+                lessStrictBadWords = null;
+            }
         }
         return new ArrayList<>();
     }
@@ -597,7 +615,8 @@ public class BadWordFinder extends Module {
     public enum BadWordList {
         Strict,
         ModeratelyStrict,
-        LessStrict
+        LessStrict,
+        MinimallyStrict
     }
 
     public enum SignMode {

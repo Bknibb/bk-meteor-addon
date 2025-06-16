@@ -32,3 +32,4 @@ This meteor addon adds a few useful commands and modules, with some features for
  - Improves meteor-rejects ChatBot to allow you to get the sender with `<sender>`
  - Improves meteor-rejects ChatBot to allow you to get arguments with `<args>` (warning changes the check from the end of the message to contained in the message)
  - Improves meteor-rejects ChatBot to add a message delay option
+ - Improves meteor-rejects ChatBot to allow you to private message the sender with `<pms>` (or `<pmsipm>` which only does it if it was sent in a private message) (needs `<sender>` to be used)
