@@ -323,6 +323,7 @@ public class BadWordFinder extends Module {
                 moderatelyStrictBadWords = null;
                 lessStrictBadWords = null;
             }
+            return minimallyStrictBadWords;
         }
         return new ArrayList<>();
     }
