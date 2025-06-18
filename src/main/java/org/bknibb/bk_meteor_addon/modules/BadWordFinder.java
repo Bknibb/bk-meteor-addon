@@ -34,6 +34,7 @@ import net.minecraft.util.shape.VoxelShape;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.MineplayUtils;
 import org.bknibb.bk_meteor_addon.UpdatableResourcesManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -363,21 +364,11 @@ public class BadWordFinder extends Module {
         ")?";
 
     private Matcher generateMatcher(String word, String message) {
-        String regex = "(?i)(?<=^|\\W)" + Pattern.quote(word.replace("<nospaces>", "")) + "(?=\\W|$)";
+        String regex = "(?i)(?<=^|\\W)" + Pattern.quote(word.replace("<nospaces>", "").replace("<nomulti>", "")) + "(?=\\W|$)";
         if (extraRegexChecks.get()) {
-            String interleaved;
-            if (word.startsWith("<nospaces>")) {
-                interleaved = String.join("[^\\w\\s_]*", Arrays.stream(word.replace("<nospaces>", "").split("")).map(c -> Pattern.quote(c) + "+").toArray(String[]::new));
-            } else {
-                interleaved = String.join("[\\W_]*", Arrays.stream(word.split("")).map(c -> Pattern.quote(c) + "+").toArray(String[]::new));
-            }
-            String currentSuffixPattern = suffixPattern;
-            if (word.endsWith("o") || word.endsWith("ing") || word.endsWith("s") || word.endsWith("ers") || word.endsWith("er") || word.endsWith("ed")) {
-                currentSuffixPattern = "";
-            } else if (word.startsWith("<nospaces>")) {
-                currentSuffixPattern = suffixPatternNoSpace;
-            }
-            if (word.startsWith("<nospaces>")) {
+            String interleaved = String.join(word.replace("<nomulti>", "").startsWith("<nospaces>") ? "[^\\w\\s_]*" : "[\\W_]*", Arrays.stream(word.replace("<nospaces>", "").replace("<nomulti>", "").split("")).map(c -> Pattern.quote(c) + (word.replace("<nospaces>", "").startsWith("<nomulti>") ? "" : "+")).toArray(String[]::new));
+            String currentSuffixPattern = getSuffixPattern(word);
+            if (word.replace("<nomulti>", "").startsWith("<nospaces>")) {
                 regex = "(?i)(?<=^|\\W)" + interleaved + "[^\\w\\s_]*" + currentSuffixPattern + "(?=\\W|$)";
             } else {
                 regex = "(?i)(?<=^|\\W)" + interleaved + "[\\W_]*" + currentSuffixPattern + "(?=\\W|$)";
@@ -394,6 +385,19 @@ public class BadWordFinder extends Module {
         }
         Matcher matcher = pattern.matcher(message);
         return matcher;
+    }
+
+    private @NotNull String getSuffixPattern(String word) {
+        String currentSuffixPattern = suffixPattern;
+        if (word.endsWith("o") || word.endsWith("ing") || word.endsWith("s") || word.endsWith("ers") || word.endsWith("er") || word.endsWith("ed")) {
+            currentSuffixPattern = "";
+        } else if (word.replace("<nomulti>", "").startsWith("<nospaces>")) {
+            currentSuffixPattern = suffixPatternNoSpace;
+        }
+        if (word.replace("<nospaces>", "").startsWith("<nomulti>")) {
+            currentSuffixPattern = currentSuffixPattern.replace("+", "");
+        }
+        return currentSuffixPattern;
     }
 
     private boolean doCheckWord(String word, String message) {
@@ -443,20 +447,20 @@ public class BadWordFinder extends Module {
             if (includeDefaultBadWordList.get()) {
                 for (String word : getBadWordsList()) {
                     if (doCheckWord(word, message)) {
-                        return word.replace("<nospaces>", "");
+                        return word.replace("<nospaces>", "").replace("<nomulti>", "");
                     }
                 }
             }
             for (String word : whitelist.get()) {
                 if (doCheckWord(word, message)) {
-                    return word.replace("<nospaces>", "");
+                    return word.replace("<nospaces>", "").replace("<nomulti>", "");
                 }
             }
         } else {
             for (String word : getBadWordsList()) {
                 if (blacklist.get().contains(word)) continue;
                 if (doCheckWord(word, message)) {
-                    return word.replace("<nospaces>", "");
+                    return word.replace("<nospaces>", "").replace("<nomulti>", "");
                 }
             }
         }

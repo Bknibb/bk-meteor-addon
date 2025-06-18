@@ -6,7 +6,6 @@ import meteordevelopment.meteorclient.utils.misc.Version;
 import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.MeteorToast;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Items;
 import org.apache.commons.io.FileUtils;
@@ -21,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class UpdatableResourcesManager {
     private static UpdatableResourcesManager INSTANCE;

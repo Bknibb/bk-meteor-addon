@@ -218,7 +218,7 @@ public class NetworkLoginLogoutNotifier extends Module {
             onlinePlayers = new ArrayList<>();
             for (Suggestion suggestion : suggestions.getList()) {
                 String name = suggestion.getText();
-                if (ignoreSelf.get() && name.equals(mc.player.getName().getString())) continue;
+                if (ignoreSelf.get() && name.equals(mc.player)) continue;
                 //if (ignoreInServer.gte() && mc.getNetworkHandler().getPlayerListEntry(name) != null) return;
                 if (listMode.get() == ListMode.Blacklist) {
                     if (blacklist.get().contains(name)) {
@@ -236,7 +236,7 @@ public class NetworkLoginLogoutNotifier extends Module {
             }
             firstRefresh = false;
             for (String name : prevOnlinePlayers) {
-                if (ignoreSelf.get() && name.equals(mc.player.getName().getString())) continue;
+                if (ignoreSelf.get() && name.equals(mc.player)) continue;
                 //if (ignoreInServer.gte() && mc.getNetworkHandler().getPlayerListEntry(name) != null) return;
                 if (listMode.get() == ListMode.Blacklist) {
                     if (blacklist.get().contains(name)) {

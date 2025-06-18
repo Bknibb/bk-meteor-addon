@@ -12,7 +12,6 @@ import net.minecraft.item.Items;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.ConfigModifier;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

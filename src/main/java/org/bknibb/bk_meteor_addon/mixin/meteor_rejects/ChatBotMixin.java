@@ -1,7 +1,6 @@
 package org.bknibb.bk_meteor_addon.mixin.meteor_rejects;
 
 import anticope.rejects.modules.ChatBot;
-import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
@@ -12,7 +11,6 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.collection.ArrayListDeque;
-import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.ConfigModifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
