@@ -26,6 +26,7 @@ This meteor addon adds a few useful commands and modules, with some features for
  - `.mp-rkick`: Will kick a roblox player using mineplay admin kick presets.
  - `.mp-warn`: Will warn a player using mineplay admin warn presets (requires /warn).
  - `.bk-update-resources`: Updates the updatable resources of Bk Meteor Addon.
+ - `.bk-update-addon`: Updates Bk Meteor Addon.
 
 ## Other Features
  - Improves meteor-rejects ChatBot to allow you to get the sender with `<sender>`

@@ -410,13 +410,13 @@ public class BadWordFinder extends Module {
     }
 
     private boolean doCheckWord(String word, String message) {
-        Matcher matcher = generateMatcher(word, message);
+        Matcher matcher = generateMatcher(word.toLowerCase(Locale.ROOT), message.toLowerCase(Locale.ROOT));
         return matcher.find();
     }
 
     private List<int[]> getBadWordPositions(String word, String message) {
         List<int[]> positions = new ArrayList<>();
-        Matcher matcher = generateMatcher(word, message);
+        Matcher matcher = generateMatcher(word.toLowerCase(Locale.ROOT), message.toLowerCase(Locale.ROOT));
         while (matcher.find()) {
             positions.add(new int[]{matcher.start(), matcher.end()});
         }

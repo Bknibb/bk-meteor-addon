@@ -91,6 +91,7 @@ public class BkMeteorAddon extends MeteorAddon {
         Commands.add(new MineplayIpCommand());
         Commands.add(new MineplayBlocksCommand());
         Commands.add(new BkUpdateResourcesCommand());
+        Commands.add(new BkUpdateAddonCommand());
     }
 
     @Override
