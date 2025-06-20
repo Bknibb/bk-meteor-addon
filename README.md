@@ -25,6 +25,7 @@ This meteor addon adds a few useful commands and modules, with some features for
  - `.mp-mute`: Will mute a player using mineplay admin mute presets (requires /mute).
  - `.mp-rban`: Will rban a roblox player using mineplay admin rban presets (requires /rban).
  - `.mp-rwarn`: Will warn a roblox player using mineplay admin warn presets.
+ - `.mp-rkick`: Will kick a roblox player using mineplay admin kick presets.
  - `.mp-warn`: Will warn a player using mineplay admin warn presets (requires /warn).
  - `.bk-update-resources`: Updates the updatable resources of Bk Meteor Addon.
 

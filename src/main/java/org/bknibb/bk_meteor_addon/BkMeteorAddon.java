@@ -88,6 +88,7 @@ public class BkMeteorAddon extends MeteorAddon {
         Commands.add(new MineplayMutePresetsCommand());
         Commands.add(new MineplayRobloxBanPresetsCommand());
         Commands.add(new MineplayRobloxWarnPresetsCommand());
+        Commands.add(new MineplayRobloxKickPresetsCommand());
         Commands.add(new MineplayWarnPresetsCommand());
         Commands.add(new MineplayIpCommand());
         Commands.add(new MineplayBlocksCommand());
