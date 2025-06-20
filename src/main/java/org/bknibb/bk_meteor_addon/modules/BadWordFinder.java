@@ -121,6 +121,15 @@ public class BadWordFinder extends Module {
         .build()
     );
 
+    private final Setting<Boolean> teleportToSigns = sgGeneral.add(new BoolSetting.Builder()
+        .name("teleport-to-signs")
+        .description("Teleport to signs with bad words (mineplay only).")
+        .defaultValue(false)
+        .visible(checkSigns::get)
+        .onChanged(state -> refreshSigns())
+        .build()
+    );
+
     private final Setting<Boolean> tracers = sgGeneral.add(new BoolSetting.Builder()
         .name("tracers")
         .description("Render tracer lines.")
@@ -514,6 +523,9 @@ public class BadWordFinder extends Module {
         if (hasBadWord) {
             info(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in sign at " + pos.toShortString());
             if (MineplayUtils.isOnMineplay() && mc.getNetworkHandler() != null) {
+                if (teleportToSigns.get() && mc.player != null) {
+                    mc.player.setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                }
                 if (signMode.get() == SignMode.Break) {
                     if (mc.player != null) {
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.getX(), pos.getY(), pos.getZ(), false, mc.player.horizontalCollision));
