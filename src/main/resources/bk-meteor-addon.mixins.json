@@ -6,7 +6,6 @@
     "BetterBreakAccessor",
     "BetterBreakMixin",
     "ClientPlayerEntityMixin",
-    "ClientPlayNetworkHandlerMixin",
     "HttpMixin",
     "SignBlockEntityMixin",
     "TitleScreenMixin"
