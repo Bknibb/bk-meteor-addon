@@ -36,7 +36,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity {
 //        return parseLines(signText);
 //    }
 
-    @Redirect(method="readNbt", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 0))
+    @Redirect(method="readData", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 0))
     private java.util.Optional<SignText> onFrontWordsReadParse(java.util.Optional<SignText> instance, java.util.function.Function<? super SignText, ? extends SignText> mapper) {
         if (Modules.get().get(BadWordFinder.class).isActive()) {
             Text[] texts = instance.orElseGet(SignText::new).getMessages(false);
@@ -56,7 +56,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity {
 //        return parseLines(signText);
 //    }
 
-    @Redirect(method="readNbt", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 1))
+    @Redirect(method="readData", at = @At(value = "INVOKE", target = "Ljava/util/Optional;map(Ljava/util/function/Function;)Ljava/util/Optional;", ordinal = 1))
     private java.util.Optional<SignText> onBackWordsReadParse(java.util.Optional<SignText> instance, java.util.function.Function<? super SignText, ? extends SignText> mapper) {
         if (Modules.get().get(BadWordFinder.class).isActive()) {
             Text[] texts = instance.orElseGet(SignText::new).getMessages(false);

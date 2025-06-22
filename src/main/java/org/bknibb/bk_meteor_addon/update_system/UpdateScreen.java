@@ -52,7 +52,7 @@ public class UpdateScreen extends WindowScreen {
             switch (res.statusCode()) {
                 case Http.UNAUTHORIZED -> {
                     String message = "Invalid authentication token for repository '%s'".formatted(addon.getRepo().getOwnerName());
-                    MinecraftClient.getInstance().getToastManager().add(new MeteorToast(Items.BARRIER, "GitHub: Unauthorized", message));
+                    MinecraftClient.getInstance().getToastManager().add(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
                     UpdateSystem.LOG.warn(message);
                     if (System.getenv("meteor.github.authorization") == null) {
                         UpdateSystem.LOG.info("Consider setting an authorization " +
