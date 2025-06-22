@@ -68,6 +68,7 @@ public class BkMeteorAddon extends MeteorAddon {
         UpdatableResourcesManager.get();
 
         //UpdateSystem.checkForUpdates(this);
+        
 
         // Modules
         Modules.get().add(new PlayerEsp());
