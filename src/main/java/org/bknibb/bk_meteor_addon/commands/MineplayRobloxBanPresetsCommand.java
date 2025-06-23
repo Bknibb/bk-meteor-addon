@@ -41,7 +41,7 @@ public class MineplayRobloxBanPresetsCommand extends Command {
             if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
             String player = StringArgumentType.getString(context, "player");
             String text = StringArgumentType.getString(context, "text");
-            mc.getNetworkHandler().sendChatCommand("rban " + player + " " + text);
+            mc.getNetworkHandler().sendChatCommand("rban " + player + " \"" + text + "\"");
             return SINGLE_SUCCESS;
         }));
         builder.then(argument);

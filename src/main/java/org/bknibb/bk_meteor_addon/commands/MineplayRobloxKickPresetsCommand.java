@@ -32,7 +32,7 @@ public class MineplayRobloxKickPresetsCommand extends Command {
             argument = argument.then(literal(preset.name()).executes(context -> {
                 if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
                 String player = StringArgumentType.getString(context, "player");
-                mc.getNetworkHandler().sendChatCommand("rkick " + player + " " + "Please stop " + preset.asString() + ", if you continue, you will be banned - Kicked Warn");
+                mc.getNetworkHandler().sendChatCommand("rkick " + player + " " + "\"Please stop " + preset.asString() + ", if you continue, you will be banned - Kicked Warn\"");
                 return SINGLE_SUCCESS;
             }));
         }
@@ -40,7 +40,7 @@ public class MineplayRobloxKickPresetsCommand extends Command {
             if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
             String player = StringArgumentType.getString(context, "player");
             String text = StringArgumentType.getString(context, "text");
-            mc.getNetworkHandler().sendChatCommand("rkick " + player + " " + "Please stop " + text + ", if you continue, you will be banned - Kicked Warn");
+            mc.getNetworkHandler().sendChatCommand("rkick " + player + " " + "\"Please stop " + text + ", if you continue, you will be banned - Kicked Warn\"");
             return SINGLE_SUCCESS;
         }));
         builder.then(argument);
