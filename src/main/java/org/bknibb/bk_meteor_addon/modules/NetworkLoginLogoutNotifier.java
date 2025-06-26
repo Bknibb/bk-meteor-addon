@@ -193,7 +193,7 @@ public class NetworkLoginLogoutNotifier extends Module {
         timer++;
         if (timer > scanInterval.get()) {
             timer = 0;
-            waitingPacket = RANDOM.nextInt(200);
+            waitingPacket = RANDOM.nextInt(100, 200);
             mc.getNetworkHandler().sendPacket(new RequestCommandCompletionsC2SPacket(waitingPacket, "/msg "));
         }
     }
