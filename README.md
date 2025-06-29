@@ -1,3 +1,4 @@
+[![GitHub Release](https://img.shields.io/github/v/release/Bknibb/bk-meteor-addon)](https://github.com/Bknibb/bk-meteor-addon/releases) [![Discord](https://img.shields.io/discord/1388788639516987563?logo=discord&color=7289DA)](https://discord.gg/3ErWyvPF4G) [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/Bknibb/bk-meteor-addon)](https://github.com/Bknibb/bk-meteor-addon/commits/master/) [![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/Bknibb/bk-meteor-addon)](https://github.com/Bknibb/bk-meteor-addon/issues) [![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/Bknibb/bk-meteor-addon)](https://github.com/Bknibb/bk-meteor-addon/pulls)
 # Bk Meteor Addon
 
 This meteor addon adds a few useful commands and modules, with some features for the mineplay server (mc.mineplay.nl).
