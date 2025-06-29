@@ -136,7 +136,7 @@ jobs:
 
                     JSON=$(jq -n \
                       --arg content "<@&$ROLE_ID>" \
-                      --arg name "Release v$VERSION - $BRANCH_NAME" \
+                      --arg name "Release $VERSION - $BRANCH_NAME" \
                       --arg description "$NOTES" \
                       '{
                         username: "Early Release Bot",
