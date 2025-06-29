@@ -114,7 +114,7 @@ jobs:
                   name: build
                   path: ./build/libs/*.jar
             - name: Release
-              if: needs.detect.outputs.is_release == 'true'
+              if: needs.detect.outputs.is_release == 'true' && github.ref == 'refs/heads/master'
               uses: softprops/action-gh-release@v2
               with:
                   token: '${{ secrets.GITHUB_TOKEN }}'
