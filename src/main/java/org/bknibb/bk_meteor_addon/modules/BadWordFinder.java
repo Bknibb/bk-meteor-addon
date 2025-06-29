@@ -187,16 +187,20 @@ public class BadWordFinder extends Module {
         EXECUTOR.submit(() -> {
             String badWord = getBadWord(message.getString().replaceAll("§[0-9a-fk-or]", ""));
             if (badWord != null) {
-                messageQueue.addLast(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in message");
+                synchronized (messageQueue) {
+                    messageQueue.addLast(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in message");
+                }
             }
         });
     }
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        while (!messageQueue.isEmpty()) {
-            String message = messageQueue.removeFirst();
-            info(message);
+        synchronized (messageQueue) {
+            while (!messageQueue.isEmpty()) {
+                String message = messageQueue.removeFirst();
+                info(message);
+            }
         }
     }
 
