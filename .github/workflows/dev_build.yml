@@ -41,7 +41,7 @@ jobs:
                       commits=$(git log --format=%H ${{ github.event.before }}..${{ github.sha }})
 
                       for sha in $commits; do
-                        msg=$(git show -s --format=%s%n%b "$sha")
+                        msg=$(git show -s --format=%B "$sha")
                         if [[ "$msg" =~ release[[:space:]]v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
                           version="v${BASH_REMATCH[1]}"
                           is_release=true
