@@ -152,5 +152,5 @@ jobs:
 
                     curl -X POST -H "Content-Type: multipart/form-data" \
                       -F "payload_json=$JSON" \
-                      -F "file=@./build/libs/$(ls ./build/libs/*.jar | head -n 1)" \
+                      -F "file=@$(ls ./build/libs/*.jar | head -n 1)" \
                       "$DISCORD_WEBHOOK"
