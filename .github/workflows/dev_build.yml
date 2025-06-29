@@ -15,27 +15,49 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Determine if commit is a release
-        id: extract_version
-        run: |
-          msg="${{ github.event.head_commit.message }}"
+      -   name: Determine if commit is a release
+          id: extract_version
+          run: |
+              is_release=false
+              version=""
+              description=""
 
-          # Extract version
-          if [[ "$msg" =~ release[[:space:]]v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
-            version="v${BASH_REMATCH[1]}"
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            echo "version=$version" >> $GITHUB_OUTPUT
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-          fi
+              branch="${GITHUB_REF##*/}"
+              echo "Current branch: $branch"
 
-          # Always output description
-          description="$(echo "$msg" | tail -n +2)"
-          {
-            echo "description<<EOF"
-            echo "$description"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+              if [ "$branch" = "master" ]; then
+                msg="${{ github.event.head_commit.message }}"
+
+                # Extract version from the HEAD commit
+                if [[ "$msg" =~ release[[:space:]]v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+                  version="v${BASH_REMATCH[1]}"
+                  is_release=true
+                  description="$(echo "$msg" | tail -n +2)"
+                fi
+              else
+                # Non-master: scan entire commit range
+                git fetch --no-tags origin "$branch"
+                commits=$(git log --format=%H ${{ github.event.before }}..${{ github.sha }})
+
+                for sha in $commits; do
+                  msg=$(git show -s --format=%s%n%b "$sha")
+                  if [[ "$msg" =~ release[[:space:]]v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+                    version="v${BASH_REMATCH[1]}"
+                    is_release=true
+                    description="$(echo "$msg" | tail -n +2)"
+                    break
+                  fi
+                done
+              fi
+
+              echo "is_release=$is_release" >> $GITHUB_OUTPUT
+              echo "version=$version" >> $GITHUB_OUTPUT
+
+              {
+                echo "description<<EOF"
+                echo "$description"
+                echo "EOF"
+              } >> $GITHUB_OUTPUT
       - name: Validate version in gradle.properties
         if: steps.extract_version.outputs.is_release == 'true'
         run: |
@@ -101,3 +123,33 @@ jobs:
           body: ${{ needs.detect.outputs.description }}
           files: |
             ./build/libs/*.jar
+      -   name: Notify Discord for early release
+          if: needs.detect.outputs.is_release == 'true' && github.ref != 'refs/heads/master'
+          env:
+              DISCORD_WEBHOOK: ${{ secrets.EARLY_RELEASES_WEBHOOK }}
+              VERSION: ${{ needs.detect.outputs.version }}
+              NOTES: ${{ needs.detect.outputs.description }}
+          run: |
+              BRANCH_NAME=$(echo "${GITHUB_REF##*/}")
+              ROLE_ID="1388798202269929492"
+
+              JSON=$(jq -n \
+                --arg content "<@&$ROLE_ID>" \
+                --arg name "Release v$VERSION - $BRANCH_NAME" \
+                --arg description "$NOTES" \
+                '{
+                  username: "Early Release Bot",
+                  avatar_url: "https://cdn.discordapp.com/avatars/870948322515496960/1a2b7ca335b10ecd64699d67e7d4866c.png",
+                  content: $content,
+                  embeds: [{
+                    title: $name,
+                    description: $description,
+                    color: 65535
+                  }]
+                }'
+              )
+
+              curl -X POST -H "Content-Type: multipart/form-data" \
+                -F "payload_json=$JSON" \
+                -F "file=@./build/libs/$(ls ./build/libs/*.jar | head -n 1)" \
+                "$DISCORD_WEBHOOK"
