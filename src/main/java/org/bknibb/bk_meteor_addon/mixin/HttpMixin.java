@@ -9,9 +9,9 @@ import java.net.http.HttpClient;
 
 @Mixin(Http.class)
 public class HttpMixin {
-    @Redirect(method = "<clinit>", at = @At(value = "INVOKE", target = "Ljava/net/http/HttpClient;newHttpClient()Ljava/net/http/HttpClient;"))
-    private static java.net.http.HttpClient newHttpClient() {
-        return java.net.http.HttpClient.newBuilder()
+    @Redirect(method = "<clinit>", at = @At(value = "INVOKE", target = "Ljava/net/http/HttpClient$Builder;build()Ljava/net/http/HttpClient;"))
+    private static java.net.http.HttpClient build(HttpClient.Builder builder) {
+        return builder
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }

@@ -21,11 +21,11 @@ public class MineplayRobloxBanPresetsCommand extends Command {
         var argument = argument("player", StringArgumentType.word()).suggests((context, suggestionsBuilder) -> {
             if (mc.getNetworkHandler() == null) return suggestionsBuilder.buildFuture();
             for (PlayerListEntry player : mc.getNetworkHandler().getPlayerList()) {
-                if (mc.player != null && Objects.equals(player.getProfile().getName(), mc.player.getGameProfile().getName())) continue;
-                if (player.getProfile().getName() == null) continue;
+                if (mc.player != null && Objects.equals(player.getProfile().name(), mc.player.getGameProfile().name())) continue;
+                if (player.getProfile().name() == null) continue;
                 if (!MineplayUtils.isRobloxPlayer(player)) continue;
-                if (!CommandSource.shouldSuggest(suggestionsBuilder.getRemaining(), player.getProfile().getName())) continue;
-                suggestionsBuilder.suggest(player.getProfile().getName());
+                if (!CommandSource.shouldSuggest(suggestionsBuilder.getRemaining(), player.getProfile().name())) continue;
+                suggestionsBuilder.suggest(player.getProfile().name());
             }
             return suggestionsBuilder.buildFuture();
         });

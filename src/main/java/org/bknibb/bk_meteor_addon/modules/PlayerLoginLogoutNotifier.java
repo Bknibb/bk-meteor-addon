@@ -261,19 +261,19 @@ public class PlayerLoginLogoutNotifier extends Module {
         for (PlayerListS2CPacket.Entry packetEntry : packet.getPlayerAdditionEntries()) {
             if (packetEntry.profile() == null) continue;
             taskQueue.addLast(new Pair<>(Instant.now(), () -> {
-                PlayerListEntry entry = mc.getNetworkHandler().getPlayerListEntry(packetEntry.profile().getId());
+                PlayerListEntry entry = mc.getNetworkHandler().getPlayerListEntry(packetEntry.profile().id());
                 if (entry == null) return;
-                if (ignoreSelf.get() && entry.getProfile().getId().equals(mc.player.getUuid())) return;
+                if (ignoreSelf.get() && entry.getProfile().id().equals(mc.player.getUuid())) return;
                 if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT)
                     return;
                 if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX)
                     return;
                 if (listMode.get() == ListMode.Blacklist) {
-                    if (blacklist.get().contains(entry.getProfile().getName())) {
+                    if (blacklist.get().contains(entry.getProfile().name())) {
                         return;
                     }
                 } else {
-                    if (!(whitelist.get().contains(entry.getProfile().getName()) || (includeFriends.get() && Friends.get().get(entry.getProfile().getName()) != null))) {
+                    if (!(whitelist.get().contains(entry.getProfile().name()) || (includeFriends.get() && Friends.get().get(entry.getProfile().name()) != null))) {
                         return;
                     }
                 }
@@ -289,15 +289,15 @@ public class PlayerLoginLogoutNotifier extends Module {
         for (UUID id : packet.profileIds()) {
             PlayerListEntry toRemove = mc.getNetworkHandler().getPlayerListEntry(id);
             if (toRemove == null) continue;
-            if (ignoreSelf.get() && toRemove.getProfile().getId().equals(mc.player.getUuid())) continue;
+            if (ignoreSelf.get() && toRemove.getProfile().id().equals(mc.player.getUuid())) continue;
             if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT) continue;
             if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX) continue;
             if (listMode.get() == ListMode.Blacklist) {
-                if (blacklist.get().contains(toRemove.getProfile().getName())) {
+                if (blacklist.get().contains(toRemove.getProfile().name())) {
                     continue;
                 }
             } else {
-                if (!(whitelist.get().contains(toRemove.getProfile().getName()) || (includeFriends.get() && Friends.get().get(toRemove.getProfile().getName()) != null))) {
+                if (!(whitelist.get().contains(toRemove.getProfile().name()) || (includeFriends.get() && Friends.get().get(toRemove.getProfile().name()) != null))) {
                     continue;
                 }
             }
@@ -313,7 +313,7 @@ public class PlayerLoginLogoutNotifier extends Module {
                     Formatting.GRAY + "["
                         + Formatting.GREEN + "+"
                         + Formatting.GRAY + "] ").append(
-                    Text.literal(entry.getProfile().getName()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
+                    Text.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
                     Text.literal(Formatting.RESET + " joined the server on ")).append(
                     Text.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
                 );
@@ -322,7 +322,7 @@ public class PlayerLoginLogoutNotifier extends Module {
                     Formatting.GRAY + "["
                         + Formatting.GREEN + "+"
                         + Formatting.GRAY + "] "
-                        + Formatting.GREEN + entry.getProfile().getName()
+                        + Formatting.GREEN + entry.getProfile().name()
                         + Formatting.RESET + " joined the server on "
                         + Formatting.GREEN + "Minecraft"
                 ));
@@ -332,12 +332,12 @@ public class PlayerLoginLogoutNotifier extends Module {
                 Formatting.GRAY + "["
                     + Formatting.GREEN + "+"
                     + Formatting.GRAY + "] "
-                    + entry.getProfile().getName()
+                    + entry.getProfile().name()
             ));
         } else {
             messageQueue.addLast(Text.literal(
                 Formatting.WHITE
-                    + entry.getProfile().getName()
+                    + entry.getProfile().name()
                     + Formatting.GRAY + " joined."
             ));
         }
@@ -350,7 +350,7 @@ public class PlayerLoginLogoutNotifier extends Module {
                     Formatting.GRAY + "["
                         + Formatting.RED + "-"
                         + Formatting.GRAY + "] ").append(
-                        Text.literal(entry.getProfile().getName()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
+                        Text.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
                         Text.literal(Formatting.RESET + " left the server on ")).append(
                         Text.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
                 );
@@ -359,7 +359,7 @@ public class PlayerLoginLogoutNotifier extends Module {
                     Formatting.GRAY + "["
                         + Formatting.RED + "-"
                         + Formatting.GRAY + "] "
-                        + Formatting.GREEN + entry.getProfile().getName()
+                        + Formatting.GREEN + entry.getProfile().name()
                         + Formatting.RESET + " left the server on "
                         + Formatting.GREEN + "Minecraft"
                 ));
@@ -369,12 +369,12 @@ public class PlayerLoginLogoutNotifier extends Module {
                 Formatting.GRAY + "["
                     + Formatting.RED + "-"
                     + Formatting.GRAY + "] "
-                    + entry.getProfile().getName()
+                    + entry.getProfile().name()
             ));
         } else {
             messageQueue.addLast(Text.literal(
                 Formatting.WHITE
-                    + entry.getProfile().getName()
+                    + entry.getProfile().name()
                     + Formatting.GRAY + " left."
             ));
         }

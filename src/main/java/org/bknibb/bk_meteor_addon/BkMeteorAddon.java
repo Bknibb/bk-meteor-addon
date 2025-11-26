@@ -1,5 +1,7 @@
 package org.bknibb.bk_meteor_addon;
 
+import com.google.common.collect.ImmutableMultimap;
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.logging.LogUtils;
@@ -32,9 +34,8 @@ public class BkMeteorAddon extends MeteorAddon {
     public static final String TEXTUREDATA = "ewogICJ0aW1lc3RhbXAiIDogMTc1MDIzMDY5MzUyMCwKICAicHJvZmlsZUlkIiA6ICJjNWJlOTIwMmUxMDQ0NmY0OTkwMmUyNjljODY2ZTU5NCIsCiAgInByb2ZpbGVOYW1lIiA6ICJtc2tuaWJiIiwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2UxNThhZGVmMmNiYTZhYjFjNjUwMzdlMjY4N2JlYWU0Njg1ZDBjNmQzMTJkMjVmZmRiM2FmN2E0OTJjOGIxNjkiCiAgICB9CiAgfQp9";
     public static final Category CATEGORY;
     static {
-        PropertyMap propertyMap = new PropertyMap();
-        propertyMap.put("textures", new Property("textures", TEXTUREDATA));
-        CATEGORY = new Category("BkMeteorAddon", new ItemStack(Registries.ITEM.getEntry(Items.PLAYER_HEAD), 1, ComponentChanges.builder().add(DataComponentTypes.PROFILE, new ProfileComponent(Optional.empty(), Optional.of(UUID.fromString("c5be9202-e104-46f4-9902-e269c866e594")), propertyMap)).build()));
+        PropertyMap propertyMap = new PropertyMap(ImmutableMultimap.of("textures", new Property("textures", TEXTUREDATA)));
+        CATEGORY = new Category("BkMeteorAddon", new ItemStack(Registries.ITEM.getEntry(Items.PLAYER_HEAD), 1, ComponentChanges.builder().add(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(UUID.fromString("c5be9202-e104-46f4-9902-e269c866e594"), "msknibb", propertyMap))).build()));
     }
     public static BkMeteorAddon INSTNACE;
     public static final boolean UPDATER_ENABLED = false;
@@ -68,7 +69,7 @@ public class BkMeteorAddon extends MeteorAddon {
         UpdatableResourcesManager.get();
 
         //UpdateSystem.checkForUpdates(this);
-        
+
 
         // Modules
         Modules.get().add(new PlayerEsp());

@@ -21,7 +21,7 @@ public class ClientPlayerEntityMixin {
         if (!MineplayUtils.isOnMineplay()) return;
 
         ClientPlayerEntity player = (ClientPlayerEntity)(Object)this;
-        WorldBorder border = player.clientWorld.getWorldBorder();
+        WorldBorder border = player.getEntityWorld().getWorldBorder();
 
         double shrink = Modules.get().get(MineplayBetterBorder.class).shrinkBy.get();
         double minX = border.getBoundWest();
@@ -29,7 +29,7 @@ public class ClientPlayerEntityMixin {
         double minZ = border.getBoundNorth();
         double maxZ = border.getBoundSouth();
 
-        Vec3d pos = player.getPos();
+        Vec3d pos = player.getEntityPos();
         Vec3d vel = player.getVelocity();
 
         // Allow player to go outside by up to `shrink` blocks before enforcing the barrier
