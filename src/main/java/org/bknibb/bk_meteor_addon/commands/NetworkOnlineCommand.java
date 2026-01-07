@@ -4,9 +4,9 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
-import net.minecraft.command.CommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.Component;
 import org.bknibb.bk_meteor_addon.modules.NetworkLoginLogoutNotifier;
 
 public class NetworkOnlineCommand extends Command {
@@ -15,7 +15,7 @@ public class NetworkOnlineCommand extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.executes(context -> {
             NetworkLoginLogoutNotifier module = Modules.get().get(NetworkLoginLogoutNotifier.class);
             if (!module.isActive()) {
@@ -32,21 +32,21 @@ public class NetworkOnlineCommand extends Command {
     private void showOnlineNotification(String name) {
         if (Modules.get().get(NetworkLoginLogoutNotifier.class).simpleNotifications.get()) {
             if (mc.player == null) return;
-            mc.player.sendMessage(Text.literal(
-                Formatting.GRAY + "["
-                    + Formatting.LIGHT_PURPLE + "Network"
-                    + Formatting.GRAY + "] "
-                    + Formatting.GRAY + "["
-                    + Formatting.GREEN + "Online"
-                    + Formatting.GRAY + "] "
-                    + Formatting.RESET + name
+            mc.player.displayClientMessage(Component.literal(
+                ChatFormatting.GRAY + "["
+                    + ChatFormatting.LIGHT_PURPLE + "Network"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.GRAY + "["
+                    + ChatFormatting.GREEN + "Online"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.RESET + name
             ), false);
         } else {
-            ChatUtils.sendMsg(Text.literal(
+            ChatUtils.sendMsg(Component.literal(
                 name
                     + " is "
-                    + Formatting.GREEN + "online"
-                    + Formatting.RESET + " on the network."
+                    + ChatFormatting.GREEN + "online"
+                    + ChatFormatting.RESET + " on the network."
             ));
         }
     }

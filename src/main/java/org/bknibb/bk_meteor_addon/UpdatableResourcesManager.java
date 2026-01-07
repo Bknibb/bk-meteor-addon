@@ -6,8 +6,8 @@ import meteordevelopment.meteorclient.utils.misc.Version;
 import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.MeteorToast;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.Items;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
@@ -120,7 +120,7 @@ public class UpdatableResourcesManager {
         switch (res.statusCode()) {
             case Http.UNAUTHORIZED -> {
                 String message = "Invalid authentication token for repository '%s'".formatted(REPO.getOwnerName());
-                MinecraftClient.getInstance().getToastManager().add(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
+                Minecraft.getInstance().getToastManager().addToast(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
                 LOG.warn(message);
                 if (System.getenv("meteor.github.authorization") == null) {
                     LOG.info("Consider setting an authorization " +

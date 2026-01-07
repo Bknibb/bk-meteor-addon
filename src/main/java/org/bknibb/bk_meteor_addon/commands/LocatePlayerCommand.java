@@ -13,9 +13,9 @@ import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.command.CommandSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Vec2f;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec2;
 import org.bknibb.bk_meteor_addon.modules.PlayerTracers;
 import org.joml.Vector2f;
 import org.joml.Vector3d;
@@ -27,13 +27,13 @@ public class LocatePlayerCommand extends Command {
         super("locate-player", "Will temporarily show a tracer to the player for 5 seconds.");
     }
 
-    private PlayerEntity targetPlayer;
+    private Player targetPlayer;
     private boolean running = false;
     private Instant startTimer;
     private final long showTime = 5;
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.then(argument("player", PlayerArgumentType.create()).executes(context -> {
             targetPlayer = PlayerArgumentType.get(context);
             startTimer = Instant.now();
@@ -53,12 +53,12 @@ public class LocatePlayerCommand extends Command {
             return;
         }
 
-        if (mc.options.hudHidden || Modules.get().get(PlayerTracers.class).style.get() == PlayerTracers.TracerStyle.Offscreen) return;
+        if (mc.options.hideGui || Modules.get().get(PlayerTracers.class).style.get() == PlayerTracers.TracerStyle.Offscreen) return;
         Color color =  Modules.get().get(PlayerTracers.class).getEntityColor(targetPlayer);
 
-        double x = targetPlayer.lastX + (targetPlayer.getX() - targetPlayer.lastX) * event.tickDelta;
-        double y = targetPlayer.lastY + (targetPlayer.getY() - targetPlayer.lastY) * event.tickDelta;
-        double z = targetPlayer.lastZ + (targetPlayer.getZ() - targetPlayer.lastZ) * event.tickDelta;
+        double x = targetPlayer.xo + (targetPlayer.getX() - targetPlayer.xo) * event.tickDelta;
+        double y = targetPlayer.yo + (targetPlayer.getY() - targetPlayer.yo) * event.tickDelta;
+        double z = targetPlayer.zo + (targetPlayer.getZ() - targetPlayer.zo) * event.tickDelta;
 
         double height = targetPlayer.getBoundingBox().maxY - targetPlayer.getBoundingBox().minY;
         if (Modules.get().get(PlayerTracers.class).target.get() == Target.Head) y += height;
@@ -75,7 +75,7 @@ public class LocatePlayerCommand extends Command {
             MeteorClient.EVENT_BUS.unsubscribe(this);
             return;
         }
-        if (mc.options.hudHidden || Modules.get().get(PlayerTracers.class).style.get() != PlayerTracers.TracerStyle.Offscreen) return;
+        if (mc.options.hideGui || Modules.get().get(PlayerTracers.class).style.get() != PlayerTracers.TracerStyle.Offscreen) return;
 
         Renderer2D.COLOR.begin();
 
@@ -84,15 +84,15 @@ public class LocatePlayerCommand extends Command {
         if (Modules.get().get(PlayerTracers.class).blinkOffscreen.get())
             color.a *= Modules.get().get(PlayerTracers.class).getAlpha();
 
-        Vec2f screenCenter = new Vec2f(mc.getWindow().getFramebufferWidth() / 2.f, mc.getWindow().getFramebufferHeight() / 2.f);
+        Vec2 screenCenter = new Vec2(mc.getWindow().getWidth() / 2.f, mc.getWindow().getHeight() / 2.f);
 
-        Vector3d projection = new Vector3d(targetPlayer.lastX, targetPlayer.lastY, targetPlayer.lastZ);
+        Vector3d projection = new Vector3d(targetPlayer.xo, targetPlayer.yo, targetPlayer.zo);
         boolean projSucceeded = NametagUtils.to2D(projection, 1, false, false);
 
-        if (projSucceeded && projection.x > 0.f && projection.x < mc.getWindow().getFramebufferWidth() && projection.y > 0.f && projection.y < mc.getWindow().getFramebufferHeight())
+        if (projSucceeded && projection.x > 0.f && projection.x < mc.getWindow().getWidth() && projection.y > 0.f && projection.y < mc.getWindow().getHeight())
             return;
 
-        projection = new Vector3d(targetPlayer.lastX, targetPlayer.lastY, targetPlayer.lastZ);
+        projection = new Vector3d(targetPlayer.xo, targetPlayer.yo, targetPlayer.zo);
         NametagUtils.to2D(projection, 1, false, true);
 
         Vector2f angle = Modules.get().get(PlayerTracers.class).vectorAngles(new Vector3d(screenCenter.x - projection.x, screenCenter.y - projection.y, 0));

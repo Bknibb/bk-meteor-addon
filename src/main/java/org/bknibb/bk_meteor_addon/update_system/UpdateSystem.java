@@ -8,8 +8,8 @@ import meteordevelopment.meteorclient.utils.render.MeteorToast;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.Items;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.slf4j.Logger;
 
@@ -38,7 +38,7 @@ public class UpdateSystem {
         switch (res.statusCode()) {
             case Http.UNAUTHORIZED -> {
                 String message = "Invalid authentication token for repository '%s'".formatted(repo.getOwnerName());
-                MinecraftClient.getInstance().getToastManager().add(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
+                Minecraft.getInstance().getToastManager().addToast(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
                 LOG.warn(message);
                 if (System.getenv("meteor.github.authorization") == null) {
                     LOG.info("Consider setting an authorization " +
@@ -56,7 +56,7 @@ public class UpdateSystem {
                     HttpResponse<CommitResponse> resCommit = requestCommit.sendJsonResponse(CommitResponse.class);
                     if (!addon.getCommit().equals(resCommit.body().sha)) {
                         LOG.info("A new version of Bk Meteor Addon is available: " + res.body().tag_name);
-                        MinecraftClient.getInstance().setScreen(new UpdateScreen(GuiThemes.get(), addon, res.body()));
+                        Minecraft.getInstance().setScreen(new UpdateScreen(GuiThemes.get(), addon, res.body()));
                         return true;
                     } else {
                         LOG.info("You are using the latest version of Bk Meteor Addon");
@@ -77,7 +77,7 @@ public class UpdateSystem {
                         .getVersion();
                     if (version.compareTo(newVersion) < 0) {
                         LOG.info("A new version of Bk Meteor Addon is available: " + res.body().tag_name);
-                        MinecraftClient.getInstance().setScreen(new UpdateScreen(GuiThemes.get(), addon, res.body()));
+                        Minecraft.getInstance().setScreen(new UpdateScreen(GuiThemes.get(), addon, res.body()));
                         return true;
                     } else {
                         LOG.info("You are using the latest version of Bk Meteor Addon");

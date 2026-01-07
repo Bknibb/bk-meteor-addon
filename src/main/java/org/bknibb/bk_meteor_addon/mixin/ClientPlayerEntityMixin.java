@@ -2,9 +2,9 @@ package org.bknibb.bk_meteor_addon.mixin;
 
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.border.WorldBorder;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.phys.Vec3;
 import org.bknibb.bk_meteor_addon.MineplayUtils;
 import org.bknibb.bk_meteor_addon.modules.MineplayBetterBorder;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,25 +12,25 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ClientPlayerEntity.class)
+@Mixin(LocalPlayer.class)
 public class ClientPlayerEntityMixin {
-    @Inject(method = "tickMovement", at = @At("TAIL"))
+    @Inject(method = "aiStep", at = @At("TAIL"))
     private void onPreMove(CallbackInfo ci) {
         if (!Modules.get().isActive(MineplayBetterBorder.class)) return;
-        if (MeteorClient.mc.world == null || MeteorClient.mc.player == null) return;
+        if (MeteorClient.mc.level == null || MeteorClient.mc.player == null) return;
         if (!MineplayUtils.isOnMineplay()) return;
 
-        ClientPlayerEntity player = (ClientPlayerEntity)(Object)this;
-        WorldBorder border = player.getEntityWorld().getWorldBorder();
+        LocalPlayer player = (LocalPlayer)(Object)this;
+        WorldBorder border = player.level().getWorldBorder();
 
         double shrink = Modules.get().get(MineplayBetterBorder.class).shrinkBy.get();
-        double minX = border.getBoundWest();
-        double maxX = border.getBoundEast();
-        double minZ = border.getBoundNorth();
-        double maxZ = border.getBoundSouth();
+        double minX = border.getMinX();
+        double maxX = border.getMaxX();
+        double minZ = border.getMinZ();
+        double maxZ = border.getMaxZ();
 
-        Vec3d pos = player.getEntityPos();
-        Vec3d vel = player.getVelocity();
+        Vec3 pos = player.position();
+        Vec3 vel = player.getDeltaMovement();
 
         // Allow player to go outside by up to `shrink` blocks before enforcing the barrier
         if (pos.x < minX - shrink || pos.x > maxX + shrink || pos.z < minZ - shrink || pos.z > maxZ + shrink) {
@@ -68,9 +68,9 @@ public class ClientPlayerEntityMixin {
 
         if (moved) {
             // Hard correct position
-            player.setPosition(clampedX, pos.y, clampedZ);
+            player.setPos(clampedX, pos.y, clampedZ);
             // Soft cancel motion only in directions of collision
-            player.setVelocity(vx, vel.y, vz);
+            player.setDeltaMovement(vx, vel.y, vz);
         }
     }
 }

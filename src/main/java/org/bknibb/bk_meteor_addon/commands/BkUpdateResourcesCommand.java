@@ -2,7 +2,7 @@ package org.bknibb.bk_meteor_addon.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.commands.Command;
-import net.minecraft.command.CommandSource;
+import net.minecraft.commands.SharedSuggestionProvider;
 import org.bknibb.bk_meteor_addon.UpdatableResourcesManager;
 
 public class BkUpdateResourcesCommand extends Command {
@@ -11,7 +11,7 @@ public class BkUpdateResourcesCommand extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.executes(context -> {
             if (UpdatableResourcesManager.get().CheckForUpdates(false)) {
                 info("Updated Resources.");

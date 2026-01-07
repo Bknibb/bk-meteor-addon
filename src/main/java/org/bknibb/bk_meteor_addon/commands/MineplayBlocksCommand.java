@@ -2,7 +2,7 @@ package org.bknibb.bk_meteor_addon.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.commands.Command;
-import net.minecraft.command.CommandSource;
+import net.minecraft.commands.SharedSuggestionProvider;
 
 public class MineplayBlocksCommand extends Command {
     public MineplayBlocksCommand() {
@@ -10,10 +10,10 @@ public class MineplayBlocksCommand extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.executes(context -> {
-            if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
-            mc.getNetworkHandler().sendChatMessage("Use /blocks or /b to open the blocks menu!");
+            if (mc.getConnection() == null) return SINGLE_SUCCESS;
+            mc.getConnection().sendChat("Use /blocks or /b to open the blocks menu!");
             return SINGLE_SUCCESS;
         });
     }

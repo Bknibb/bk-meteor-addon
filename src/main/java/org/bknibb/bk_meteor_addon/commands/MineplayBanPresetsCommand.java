@@ -3,11 +3,10 @@ package org.bknibb.bk_meteor_addon.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.commands.Command;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.command.CommandSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.StringIdentifiable;
-
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.entity.player.Player;
 import java.util.Objects;
 
 public class MineplayBanPresetsCommand extends Command {
@@ -16,52 +15,52 @@ public class MineplayBanPresetsCommand extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         var argument = argument("player", StringArgumentType.word()).suggests((context, suggestionsBuilder) -> {
-            if (mc.world == null) {
+            if (mc.level == null) {
                 return suggestionsBuilder.buildFuture();
             }
-            if (mc.getNetworkHandler() == null) {
-                for (PlayerEntity player : mc.world.getPlayers()) {
+            if (mc.getConnection() == null) {
+                for (Player player : mc.level.players()) {
                     if (player == mc.player) continue;
                     if (player.getName() == null) continue;
-                    if (!CommandSource.shouldSuggest(suggestionsBuilder.getRemaining(), player.getName().getString())) continue;
+                    if (!SharedSuggestionProvider.matchesSubStr(suggestionsBuilder.getRemaining(), player.getName().getString())) continue;
                     suggestionsBuilder.suggest(player.getName().getString());
                 }
                 return suggestionsBuilder.buildFuture();
             }
-            for (PlayerListEntry player : mc.getNetworkHandler().getPlayerList()) {
+            for (PlayerInfo player : mc.getConnection().getOnlinePlayers()) {
                 if (mc.player != null && Objects.equals(player.getProfile().name(), mc.player.getGameProfile().name())) continue;
                 if (player.getProfile().name() == null) continue;
-                if (!CommandSource.shouldSuggest(suggestionsBuilder.getRemaining(), player.getProfile().name())) continue;
+                if (!SharedSuggestionProvider.matchesSubStr(suggestionsBuilder.getRemaining(), player.getProfile().name())) continue;
                 suggestionsBuilder.suggest(player.getProfile().name());
             }
             return suggestionsBuilder.buildFuture();
         });
         for (BanPreset preset : BanPreset.values()) {
             argument = argument.then(literal(preset.name()).executes(context -> {
-                if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
+                if (mc.getConnection() == null) return SINGLE_SUCCESS;
                 String player = StringArgumentType.getString(context, "player");
-                mc.getNetworkHandler().sendChatCommand("ban " + player + " " + preset.asString());
+                mc.getConnection().sendCommand("ban " + player + " " + preset.getSerializedName());
                 return SINGLE_SUCCESS;
             }).then(literal("-s").executes(context -> {
-                if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
+                if (mc.getConnection() == null) return SINGLE_SUCCESS;
                 String player = StringArgumentType.getString(context, "player");
-                mc.getNetworkHandler().sendChatCommand("ban " + player + " " + preset.asString() + " -s");
+                mc.getConnection().sendCommand("ban " + player + " " + preset.getSerializedName() + " -s");
                 return SINGLE_SUCCESS;
             })));
         }
         argument = argument.then(argument("text", StringArgumentType.greedyString()).executes(context -> {
-            if (mc.getNetworkHandler() == null) return SINGLE_SUCCESS;
+            if (mc.getConnection() == null) return SINGLE_SUCCESS;
             String player = StringArgumentType.getString(context, "player");
             String text = StringArgumentType.getString(context, "text");
-            mc.getNetworkHandler().sendChatCommand("ban " + player + " " + text);
+            mc.getConnection().sendCommand("ban " + player + " " + text);
             return SINGLE_SUCCESS;
         }));
         builder.then(argument);
     }
 
-    private enum BanPreset implements StringIdentifiable {
+    private enum BanPreset implements StringRepresentable {
         Griefing,
         InappropriateBehaviour,
         InappropriateBuilds,
@@ -70,7 +69,7 @@ public class MineplayBanPresetsCommand extends Command {
         HateSpeech;
 
         @Override
-        public String asString() {
+        public String getSerializedName() {
             if (this == Griefing) {
                 return "Griefing";
             } else if (this == InappropriateBuilds) {

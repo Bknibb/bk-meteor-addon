@@ -12,15 +12,15 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
-import net.minecraft.util.collection.ArrayListDeque;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.util.ArrayListDeque;
+import net.minecraft.util.Tuple;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.MineplayUtils;
 
@@ -139,9 +139,9 @@ public class PlayerLoginLogoutNotifier extends Module {
 
     private int timer;
     //private boolean loginPacket = true;
-    private final ArrayListDeque<Text> messageQueue = new ArrayListDeque<>();
+    private final ArrayListDeque<Component> messageQueue = new ArrayListDeque<>();
     private List<String> onlineRobloxPlayers = new ArrayList<>();
-    private final ArrayListDeque<Pair<Instant, Runnable>> taskQueue = new ArrayListDeque<>();
+    private final ArrayListDeque<Tuple<Instant, Runnable>> taskQueue = new ArrayListDeque<>();
 
     public PlayerLoginLogoutNotifier() {
         super(BkMeteorAddon.CATEGORY, "player-login-logout-notifier", "Notifies you when a player logs in or out.");
@@ -151,7 +151,7 @@ public class PlayerLoginLogoutNotifier extends Module {
     public WWidget getWidget(GuiTheme theme) {
         WHorizontalList list = theme.horizontalList();
         list.add(theme.button("Copy List Settings")).widget().action = () -> {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             tag.put("listMode", listMode.toTag());
             tag.put("blacklist", blacklist.toTag());
             tag.put("includeFriends", includeFriends.toTag());
@@ -159,7 +159,7 @@ public class PlayerLoginLogoutNotifier extends Module {
             NbtUtils.toClipboard(tag);
         };
         list.add(theme.button("Paste List Settings")).widget().action = () -> {
-            NbtCompound tag = NbtUtils.fromClipboard();
+            CompoundTag tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("listMode")) {
                 listMode.fromTag(tag.getCompound("listMode").get());
@@ -175,14 +175,14 @@ public class PlayerLoginLogoutNotifier extends Module {
             }
         };
         list.add(theme.button("Copy Server List Settings")).widget().action = () -> {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             tag.put("serverListMode", serverListMode.toTag());
             tag.put("serverBlacklist", serverBlacklist.toTag());
             tag.put("serverWhitelist", serverWhitelist.toTag());
             NbtUtils.toClipboard(tag);
         };
         list.add(theme.button("Paste Server List Settings")).widget().action = () -> {
-            NbtCompound tag = NbtUtils.fromClipboard();
+            CompoundTag tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("serverListMode")) {
                 serverListMode.fromTag(tag.getCompound("serverListMode").get());
@@ -213,26 +213,26 @@ public class PlayerLoginLogoutNotifier extends Module {
     private void onReceivePacket(PacketEvent.Receive event) {
         if (!ServerAllowed()) return;
         switch (event.packet) {
-            case PlayerListS2CPacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Joins) -> {
+            case ClientboundPlayerInfoUpdatePacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Joins) -> {
 
-                if (packet.getActions().contains(PlayerListS2CPacket.Action.ADD_PLAYER)) {
+                if (packet.actions().contains(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER)) {
                     createJoinNotifications(packet);
                 }
             }
-            case PlayerRemoveS2CPacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Leaves) ->
+            case ClientboundPlayerInfoRemovePacket packet when joinsLeavesMode.get().equals(JoinLeaveModes.Both) || joinsLeavesMode.get().equals(JoinLeaveModes.Leaves) ->
                 createLeaveNotification(packet);
             default -> {}
         }
     }
 
     private boolean ServerAllowed() {
-        if (mc.getCurrentServerEntry() == null) {
+        if (mc.getCurrentServer() == null) {
             return false;
         }
         if (serverListMode.get() == ListMode.Blacklist) {
-            return !serverBlacklist.get().contains(mc.getCurrentServerEntry().address);
+            return !serverBlacklist.get().contains(mc.getCurrentServer().ip);
         } else {
-            return serverWhitelist.get().contains(mc.getCurrentServerEntry().address);
+            return serverWhitelist.get().contains(mc.getCurrentServer().ip);
         }
     }
 
@@ -243,27 +243,27 @@ public class PlayerLoginLogoutNotifier extends Module {
             timer = 0;
             if (simpleNotifications.get()) {
                 if (mc.player == null) continue;
-                mc.player.sendMessage(messageQueue.removeFirst(), false);
+                mc.player.displayClientMessage(messageQueue.removeFirst(), false);
             } else {
                 ChatUtils.sendMsg(messageQueue.removeFirst());
             }
         }
         while (!taskQueue.isEmpty()) {
-            if (Instant.now().isAfter(taskQueue.getFirst().getLeft().plusMillis(joinDataDelay.get()))) {
+            if (Instant.now().isAfter(taskQueue.getFirst().getA().plusMillis(joinDataDelay.get()))) {
                 break;
             }
-            taskQueue.removeFirst().getRight().run();
+            taskQueue.removeFirst().getB().run();
         }
     }
 
-    private void createJoinNotifications(PlayerListS2CPacket packet) {
-        if (mc.getNetworkHandler() == null || mc.player == null) return;
-        for (PlayerListS2CPacket.Entry packetEntry : packet.getPlayerAdditionEntries()) {
+    private void createJoinNotifications(ClientboundPlayerInfoUpdatePacket packet) {
+        if (mc.getConnection() == null || mc.player == null) return;
+        for (ClientboundPlayerInfoUpdatePacket.Entry packetEntry : packet.newEntries()) {
             if (packetEntry.profile() == null) continue;
-            taskQueue.addLast(new Pair<>(Instant.now(), () -> {
-                PlayerListEntry entry = mc.getNetworkHandler().getPlayerListEntry(packetEntry.profile().id());
+            taskQueue.addLast(new Tuple<>(Instant.now(), () -> {
+                PlayerInfo entry = mc.getConnection().getPlayerInfo(packetEntry.profile().id());
                 if (entry == null) return;
-                if (ignoreSelf.get() && entry.getProfile().id().equals(mc.player.getUuid())) return;
+                if (ignoreSelf.get() && entry.getProfile().id().equals(mc.player.getUUID())) return;
                 if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT)
                     return;
                 if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(entry) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX)
@@ -283,13 +283,13 @@ public class PlayerLoginLogoutNotifier extends Module {
         }
     }
 
-    private void createLeaveNotification(PlayerRemoveS2CPacket packet) {
-        if (mc.getNetworkHandler() == null || mc.player == null) return;
+    private void createLeaveNotification(ClientboundPlayerInfoRemovePacket packet) {
+        if (mc.getConnection() == null || mc.player == null) return;
 
         for (UUID id : packet.profileIds()) {
-            PlayerListEntry toRemove = mc.getNetworkHandler().getPlayerListEntry(id);
+            PlayerInfo toRemove = mc.getConnection().getPlayerInfo(id);
             if (toRemove == null) continue;
-            if (ignoreSelf.get() && toRemove.getProfile().id().equals(mc.player.getUuid())) continue;
+            if (ignoreSelf.get() && toRemove.getProfile().id().equals(mc.player.getUUID())) continue;
             if (MineplayUtils.isOnMineplay() && MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.MINECRAFT) continue;
             if (MineplayUtils.isOnMineplay() && !MineplayUtils.isRobloxPlayer(toRemove) && mineplayPlatformFilter.get() == MineplayPlatformType.ROBLOX) continue;
             if (listMode.get() == ListMode.Blacklist) {
@@ -306,76 +306,76 @@ public class PlayerLoginLogoutNotifier extends Module {
         }
     }
 
-    private void doCreateJoinNotification(PlayerListEntry entry) {
+    private void doCreateJoinNotification(PlayerInfo entry) {
         if (customMineplayNotifications.get() && MineplayUtils.isOnMineplay()) {
             if (MineplayUtils.isRobloxPlayer(entry)) {
-                messageQueue.addLast(Text.literal(
-                    Formatting.GRAY + "["
-                        + Formatting.GREEN + "+"
-                        + Formatting.GRAY + "] ").append(
-                    Text.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
-                    Text.literal(Formatting.RESET + " joined the server on ")).append(
-                    Text.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
+                messageQueue.addLast(Component.literal(
+                    ChatFormatting.GRAY + "["
+                        + ChatFormatting.GREEN + "+"
+                        + ChatFormatting.GRAY + "] ").append(
+                    Component.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
+                    Component.literal(ChatFormatting.RESET + " joined the server on ")).append(
+                    Component.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
                 );
             } else {
-                messageQueue.addLast(Text.literal(
-                    Formatting.GRAY + "["
-                        + Formatting.GREEN + "+"
-                        + Formatting.GRAY + "] "
-                        + Formatting.GREEN + entry.getProfile().name()
-                        + Formatting.RESET + " joined the server on "
-                        + Formatting.GREEN + "Minecraft"
+                messageQueue.addLast(Component.literal(
+                    ChatFormatting.GRAY + "["
+                        + ChatFormatting.GREEN + "+"
+                        + ChatFormatting.GRAY + "] "
+                        + ChatFormatting.GREEN + entry.getProfile().name()
+                        + ChatFormatting.RESET + " joined the server on "
+                        + ChatFormatting.GREEN + "Minecraft"
                 ));
             }
         } else if (simpleNotifications.get()) {
-            messageQueue.addLast(Text.literal(
-                Formatting.GRAY + "["
-                    + Formatting.GREEN + "+"
-                    + Formatting.GRAY + "] "
+            messageQueue.addLast(Component.literal(
+                ChatFormatting.GRAY + "["
+                    + ChatFormatting.GREEN + "+"
+                    + ChatFormatting.GRAY + "] "
                     + entry.getProfile().name()
             ));
         } else {
-            messageQueue.addLast(Text.literal(
-                Formatting.WHITE
+            messageQueue.addLast(Component.literal(
+                ChatFormatting.WHITE
                     + entry.getProfile().name()
-                    + Formatting.GRAY + " joined."
+                    + ChatFormatting.GRAY + " joined."
             ));
         }
     }
 
-    private void doCreateLeaveNotification(PlayerListEntry entry) {
+    private void doCreateLeaveNotification(PlayerInfo entry) {
         if (customMineplayNotifications.get() && MineplayUtils.isOnMineplay()) {
             if (MineplayUtils.isRobloxPlayer(entry)) {
-                messageQueue.addLast(Text.literal(
-                    Formatting.GRAY + "["
-                        + Formatting.RED + "-"
-                        + Formatting.GRAY + "] ").append(
-                        Text.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
-                        Text.literal(Formatting.RESET + " left the server on ")).append(
-                        Text.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
+                messageQueue.addLast(Component.literal(
+                    ChatFormatting.GRAY + "["
+                        + ChatFormatting.RED + "-"
+                        + ChatFormatting.GRAY + "] ").append(
+                        Component.literal(entry.getProfile().name()).setStyle(Style.EMPTY.withColor(0xFF999B))).append(
+                        Component.literal(ChatFormatting.RESET + " left the server on ")).append(
+                        Component.literal("Roblox").setStyle(Style.EMPTY.withColor(0xFF999B)))
                 );
             } else {
-                messageQueue.addLast(Text.literal(
-                    Formatting.GRAY + "["
-                        + Formatting.RED + "-"
-                        + Formatting.GRAY + "] "
-                        + Formatting.GREEN + entry.getProfile().name()
-                        + Formatting.RESET + " left the server on "
-                        + Formatting.GREEN + "Minecraft"
+                messageQueue.addLast(Component.literal(
+                    ChatFormatting.GRAY + "["
+                        + ChatFormatting.RED + "-"
+                        + ChatFormatting.GRAY + "] "
+                        + ChatFormatting.GREEN + entry.getProfile().name()
+                        + ChatFormatting.RESET + " left the server on "
+                        + ChatFormatting.GREEN + "Minecraft"
                 ));
             }
         } else if (simpleNotifications.get()) {
-            messageQueue.addLast(Text.literal(
-                Formatting.GRAY + "["
-                    + Formatting.RED + "-"
-                    + Formatting.GRAY + "] "
+            messageQueue.addLast(Component.literal(
+                ChatFormatting.GRAY + "["
+                    + ChatFormatting.RED + "-"
+                    + ChatFormatting.GRAY + "] "
                     + entry.getProfile().name()
             ));
         } else {
-            messageQueue.addLast(Text.literal(
-                Formatting.WHITE
+            messageQueue.addLast(Component.literal(
+                ChatFormatting.WHITE
                     + entry.getProfile().name()
-                    + Formatting.GRAY + " left."
+                    + ChatFormatting.GRAY + " left."
             ));
         }
     }

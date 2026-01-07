@@ -19,11 +19,11 @@ import meteordevelopment.meteorclient.utils.render.WireframeEntityRenderer;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.joml.Vector3d;
 
@@ -139,7 +139,7 @@ public class PlayerEsp extends Module {
     public WWidget getWidget(GuiTheme theme) {
         WHorizontalList list = theme.horizontalList();
         list.add(theme.button("Copy List Settings")).widget().action = () -> {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             tag.put("listMode", listMode.toTag());
             tag.put("blacklist", blacklist.toTag());
             tag.put("includeFriends", includeFriends.toTag());
@@ -147,7 +147,7 @@ public class PlayerEsp extends Module {
             NbtUtils.toClipboard(tag);
         };
         list.add(theme.button("Paste List Settings")).widget().action = () -> {
-            NbtCompound tag = NbtUtils.fromClipboard();
+            CompoundTag tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("listMode")) {
                 listMode.fromTag(tag.getCompound("listMode").get());
@@ -168,11 +168,11 @@ public class PlayerEsp extends Module {
     @EventHandler
     private void onRender3D(Render3DEvent event) {
         if (mode.get() == Mode._2D) return;
-        if (mc.world == null) return;
+        if (mc.level == null) return;
 
         count = 0;
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (shouldSkip(entity)) continue;
 
             if (mode.get() == Mode.Box || mode.get() == Mode.Wireframe) drawBoundingBox(event, entity);
@@ -188,11 +188,11 @@ public class PlayerEsp extends Module {
         }
 
         if (mode.get() == Mode.Box) {
-            double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX()) - entity.getX();
-            double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY()) - entity.getY();
-            double z = MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ()) - entity.getZ();
+            double x = Mth.lerp(event.tickDelta, entity.xOld, entity.getX()) - entity.getX();
+            double y = Mth.lerp(event.tickDelta, entity.yOld, entity.getY()) - entity.getY();
+            double z = Mth.lerp(event.tickDelta, entity.zOld, entity.getZ()) - entity.getZ();
 
-            Box box = entity.getBoundingBox();
+            AABB box = entity.getBoundingBox();
             event.renderer.box(x + box.minX, y + box.minY, z + box.minZ, x + box.maxX, y + box.maxY, z + box.maxZ, sideColor, lineColor, shapeMode.get(), 0);
         } else {
             WireframeEntityRenderer.render(event, entity, 1, sideColor, lineColor, shapeMode.get());
@@ -204,19 +204,19 @@ public class PlayerEsp extends Module {
     @EventHandler
     private void onRender2D(Render2DEvent event) {
         if (mode.get() != Mode._2D) return;
-        if (mc.world == null) return;
+        if (mc.level == null) return;
 
         Renderer2D.COLOR.begin();
         count = 0;
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (shouldSkip(entity)) continue;
 
-            Box box = entity.getBoundingBox();
+            AABB box = entity.getBoundingBox();
 
-            double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX()) - entity.getX();
-            double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY()) - entity.getY();
-            double z = MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ()) - entity.getZ();
+            double x = Mth.lerp(event.tickDelta, entity.xOld, entity.getX()) - entity.getX();
+            double y = Mth.lerp(event.tickDelta, entity.yOld, entity.getY()) - entity.getY();
+            double z = Mth.lerp(event.tickDelta, entity.zOld, entity.getZ()) - entity.getZ();
 
             // Check corners
             pos1.set(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
@@ -279,7 +279,7 @@ public class PlayerEsp extends Module {
     // Utils
 
     public boolean shouldSkip(Entity entity) {
-        if (!(entity instanceof PlayerEntity)) return true;
+        if (!(entity instanceof Player)) return true;
         if (entity == mc.player) return true;
         if (listMode.get() == ListMode.Blacklist) {
             if (blacklist.get().contains(entity.getName().getString())) return true;
@@ -298,7 +298,7 @@ public class PlayerEsp extends Module {
     }
 
     private double getFadeAlpha(Entity entity) {
-        double dist = PlayerUtils.squaredDistanceToCamera(entity.getX() + entity.getWidth() / 2, entity.getY() + entity.getEyeHeight(entity.getPose()), entity.getZ() + entity.getWidth() / 2);
+        double dist = PlayerUtils.squaredDistanceToCamera(entity.getX() + entity.getBbWidth() / 2, entity.getY() + entity.getEyeHeight(entity.getPose()), entity.getZ() + entity.getBbWidth() / 2);
         double fadeDist = Math.pow(fadeDistance.get(), 2);
         double alpha = 1;
         if (dist <= fadeDist * fadeDist) alpha = (float) (Math.sqrt(dist) / fadeDist);
@@ -308,11 +308,11 @@ public class PlayerEsp extends Module {
 
     public Color getEntityTypeColor(Entity entity) {
         if (distance.get()) {
-            if (friendOverride.get() && entity instanceof PlayerEntity && Friends.get().isFriend((PlayerEntity) entity)) {
+            if (friendOverride.get() && entity instanceof Player && Friends.get().isFriend((Player) entity)) {
                 return Config.get().friendColor.get();
             } else return EntityUtils.getColorFromDistance(entity);
         } else {
-            return PlayerUtils.getPlayerColor(((PlayerEntity) entity), playersColor.get());
+            return PlayerUtils.getPlayerColor(((Player) entity), playersColor.get());
         }
     }
 

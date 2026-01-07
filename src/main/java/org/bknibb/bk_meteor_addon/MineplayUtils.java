@@ -1,21 +1,21 @@
 package org.bknibb.bk_meteor_addon;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 
 public class MineplayUtils {
-    public static boolean isRobloxPlayer(PlayerListEntry entry) {
-        if (entry == null || entry.getDisplayName() == null || entry.getDisplayName().getStyle().getColor() == null) {
+    public static boolean isRobloxPlayer(PlayerInfo entry) {
+        if (entry == null || entry.getTabListDisplayName() == null || entry.getTabListDisplayName().getStyle().getColor() == null) {
             return false;
         }
-        return entry.getDisplayName().getStyle().getColor().getRgb() == 0xFF999B;
+        return entry.getTabListDisplayName().getStyle().getColor().getValue() == 0xFF999B;
     }
     public static boolean isOnMineplay() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getCurrentServerEntry() == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getCurrentServer() == null) {
             return false;
         }
-        String serverName = client.getCurrentServerEntry().address;
+        String serverName = client.getCurrentServer().ip;
         return serverName.contains("mineplay.nl");
     }
 //    public static boolean isDisconnectedPlayer(PlayerEntity player) {

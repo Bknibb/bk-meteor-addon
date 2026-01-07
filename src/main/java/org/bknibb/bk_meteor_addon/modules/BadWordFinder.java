@@ -18,19 +18,19 @@ import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.AbstractSignBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.network.packet.c2s.play.UpdateSignC2SPacket;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.collection.ArrayListDeque;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
+import net.minecraft.util.ArrayListDeque;
+import net.minecraft.world.level.block.SignBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.MineplayUtils;
 import org.bknibb.bk_meteor_addon.UpdatableResourcesManager;
@@ -182,13 +182,13 @@ public class BadWordFinder extends Module {
     @EventHandler
     private void onMessageRecieve(ReceiveMessageEvent event) {
         if (!checkChatMessages.get()) return;
-        Text message = event.getMessage();
+        Component message = event.getMessage();
         if (message.getString().contains("[Meteor]")) return;
         EXECUTOR.submit(() -> {
             String badWord = getBadWord(message.getString().replaceAll("§[0-9a-fk-or]", ""));
             if (badWord != null) {
                 synchronized (messageQueue) {
-                    messageQueue.addLast(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in message");
+                    messageQueue.addLast(ChatFormatting.RESET + "Bad word " + ChatFormatting.RED + badWord + ChatFormatting.RESET + " found in message");
                 }
             }
         });
@@ -206,15 +206,15 @@ public class BadWordFinder extends Module {
 
     @EventHandler
     private void render(Render3DEvent event) {
-        if (mc.options.hudHidden) return;
-        if (mc.world == null) return;
+        if (mc.options.hideGui) return;
+        if (mc.level == null) return;
         if (!checkSigns.get()) return;
         ESPBlockData signBlockData = signBlockConfig.get();
         for (Map.Entry<BlockPos, BadSign> entry : badSigns.entrySet()) {
             BlockPos pos = entry.getKey();
             //BadSign badSign = entry.getValue();
-            BlockState state = mc.world.getBlockState(pos);
-            if (state == null || !state.hasBlockEntity() || !(state.getBlock() instanceof AbstractSignBlock)) {
+            BlockState state = mc.level.getBlockState(pos);
+            if (state == null || !state.hasBlockEntity() || !(state.getBlock() instanceof SignBlock)) {
                 badSigns.remove(pos);
                 return;
             }
@@ -227,14 +227,14 @@ public class BadWordFinder extends Module {
             double x2 = x + 1;
             double y2 = y + 1;
             double z2 = z + 1;
-            VoxelShape shape = state.getOutlineShape(mc.world, pos);
+            VoxelShape shape = state.getShape(mc.level, pos);
             if (!shape.isEmpty()) {
-                x1 = x + shape.getMin(Direction.Axis.X);
-                y1 = y + shape.getMin(Direction.Axis.Y);
-                z1 = z + shape.getMin(Direction.Axis.Z);
-                x2 = x + shape.getMax(Direction.Axis.X);
-                y2 = y + shape.getMax(Direction.Axis.Y);
-                z2 = z + shape.getMax(Direction.Axis.Z);
+                x1 = x + shape.min(Direction.Axis.X);
+                y1 = y + shape.min(Direction.Axis.Y);
+                z1 = z + shape.min(Direction.Axis.Z);
+                x2 = x + shape.max(Direction.Axis.X);
+                y2 = y + shape.max(Direction.Axis.Y);
+                z2 = z + shape.max(Direction.Axis.Z);
             }
             ShapeMode shapeMode = signBlockData.shapeMode;
             Color lineColor = signBlockData.lineColor;
@@ -514,10 +514,10 @@ public class BadWordFinder extends Module {
 
     private final Map<BlockPos, BadSign> badSigns = new ConcurrentHashMap<>();
 
-    private void doBadWordCheck(Text[] texts, BlockPos pos, boolean back) {
+    private void doBadWordCheck(Component[] texts, BlockPos pos, boolean back) {
         boolean hasBadWord = false;
         String badWord = null;
-        for (Text text : texts) {
+        for (Component text : texts) {
             badWord = getBadWord(text.getString().replaceAll("§[0-9a-fk-or]", ""));
             if (badWord != null) {
                 hasBadWord = true;
@@ -525,21 +525,21 @@ public class BadWordFinder extends Module {
             }
         }
         if (hasBadWord) {
-            info(Formatting.RESET + "Bad word " + Formatting.RED + badWord + Formatting.RESET + " found in sign at " + pos.toShortString());
-            if (MineplayUtils.isOnMineplay() && mc.getNetworkHandler() != null) {
+            info(ChatFormatting.RESET + "Bad word " + ChatFormatting.RED + badWord + ChatFormatting.RESET + " found in sign at " + pos.toShortString());
+            if (MineplayUtils.isOnMineplay() && mc.getConnection() != null) {
                 if (teleportToSigns.get() && mc.player != null) {
-                    mc.player.setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    mc.player.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 }
                 if (signMode.get() == SignMode.Break) {
                     if (mc.player != null) {
-                        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(pos.getX(), pos.getY(), pos.getZ(), false, mc.player.horizontalCollision));
-                        mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP));
-                        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY(), mc.player.getZ(), false, mc.player.horizontalCollision));
+                        mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(pos.getX(), pos.getY(), pos.getZ(), false, mc.player.horizontalCollision));
+                        mc.getConnection().send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP));
+                        mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(mc.player.getX(), mc.player.getY(), mc.player.getZ(), false, mc.player.horizontalCollision));
                         badSigns.remove(pos);
                         return;
                     }
                 } else if (signMode.get() == SignMode.Erase) {
-                    mc.getNetworkHandler().sendPacket(new UpdateSignC2SPacket(pos, !back, "", "", "", ""));
+                    mc.getConnection().send(new ServerboundSignUpdatePacket(pos, !back, "", "", "", ""));
                     if (badSigns.containsKey(pos)) {
                         BadSign badSign = badSigns.get(pos);
                         if (back) {
@@ -554,7 +554,7 @@ public class BadWordFinder extends Module {
                     return;
                 } else if (signMode.get() == SignMode.Censor) {
                     String censorCharacter = signCensorCharacter.get();
-                    mc.getNetworkHandler().sendPacket(new UpdateSignC2SPacket(pos, !back, censorString(texts[0].getString(), censorCharacter), censorString(texts[1].getString(), censorCharacter), censorString(texts[2].getString(), censorCharacter), censorString(texts[3].getString(), censorCharacter)));
+                    mc.getConnection().send(new ServerboundSignUpdatePacket(pos, !back, censorString(texts[0].getString(), censorCharacter), censorString(texts[1].getString(), censorCharacter), censorString(texts[2].getString(), censorCharacter), censorString(texts[3].getString(), censorCharacter)));
                     if (badSigns.containsKey(pos)) {
                         BadSign badSign = badSigns.get(pos);
                         if (back) {
@@ -595,23 +595,23 @@ public class BadWordFinder extends Module {
         }
     }
 
-    public void badWordCheck(Text[] texts, BlockPos pos, boolean back) {
+    public void badWordCheck(Component[] texts, BlockPos pos, boolean back) {
         if (!isActive() || !checkSigns.get()) return;
         EXECUTOR.submit(() -> doBadWordCheck(texts, pos, back));
     }
 
-    public static void BadWordCheck(Text[] texts, BlockPos pos, boolean back) {
+    public static void BadWordCheck(Component[] texts, BlockPos pos, boolean back) {
         Modules.get().get(BadWordFinder.class).badWordCheck(texts, pos, back);
     }
 
     public void refreshSigns(/*boolean clear*/) {
         //if (clear) badSigns.clear();
-        if (mc.world == null) return;
+        if (mc.level == null) return;
         for (BlockEntity block : Utils.blockEntities()) {
             if (block instanceof SignBlockEntity sign) {
-                BlockPos pos = sign.getPos();
-                Text[] textsFront = sign.getFrontText().getMessages(false);
-                Text[] textsBack = sign.getBackText().getMessages(false);
+                BlockPos pos = sign.getBlockPos();
+                Component[] textsFront = sign.getFrontText().getMessages(false);
+                Component[] textsBack = sign.getBackText().getMessages(false);
                 badWordCheck(textsFront, pos, false);
                 badWordCheck(textsBack, pos, true);
             }

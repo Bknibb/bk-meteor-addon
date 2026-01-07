@@ -14,11 +14,11 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.packet.c2s.play.RequestCommandCompletionsC2SPacket;
-import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket;
+import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 
 import java.util.ArrayList;
@@ -125,7 +125,7 @@ public class NetworkLoginLogoutNotifier extends Module {
     public WWidget getWidget(GuiTheme theme) {
         WHorizontalList list = theme.horizontalList();
         list.add(theme.button("Copy List Settings")).widget().action = () -> {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             tag.put("listMode", listMode.toTag());
             tag.put("blacklist", blacklist.toTag());
             tag.put("includeFriends", includeFriends.toTag());
@@ -133,7 +133,7 @@ public class NetworkLoginLogoutNotifier extends Module {
             NbtUtils.toClipboard(tag);
         };
         list.add(theme.button("Paste List Settings")).widget().action = () -> {
-            NbtCompound tag = NbtUtils.fromClipboard();
+            CompoundTag tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("listMode")) {
                 listMode.fromTag(tag.getCompound("listMode").get());
@@ -149,14 +149,14 @@ public class NetworkLoginLogoutNotifier extends Module {
             }
         };
         list.add(theme.button("Copy Server List Settings")).widget().action = () -> {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             tag.put("serverListMode", serverListMode.toTag());
             tag.put("serverBlacklist", serverBlacklist.toTag());
             tag.put("serverWhitelist", serverWhitelist.toTag());
             NbtUtils.toClipboard(tag);
         };
         list.add(theme.button("Paste Server List Settings")).widget().action = () -> {
-            NbtCompound tag = NbtUtils.fromClipboard();
+            CompoundTag tag = NbtUtils.fromClipboard();
             if (tag == null) return;
             if (tag.contains("serverListMode")) {
                 serverListMode.fromTag(tag.getCompound("serverListMode").get());
@@ -172,29 +172,29 @@ public class NetworkLoginLogoutNotifier extends Module {
     }
 
     private boolean ServerAllowed() {
-        if (mc.getCurrentServerEntry() == null) {
+        if (mc.getCurrentServer() == null) {
             return false;
         }
         if (serverListMode.get() == ListMode.Blacklist) {
-            return !serverBlacklist.get().contains(mc.getCurrentServerEntry().address);
+            return !serverBlacklist.get().contains(mc.getCurrentServer().ip);
         } else {
-            return serverWhitelist.get().contains(mc.getCurrentServerEntry().address);
+            return serverWhitelist.get().contains(mc.getCurrentServer().ip);
         }
     }
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
         if (waitingPacket != null) return;
-        if (mc.isInSingleplayer()) return;
-        if (mc.getCurrentServerEntry() == null) return;
-        if (mc.getCurrentServerEntry().isLocal()) return;
+        if (mc.isLocalServer()) return;
+        if (mc.getCurrentServer() == null) return;
+        if (mc.getCurrentServer().isLan()) return;
         if (!ServerAllowed()) return;
-        if (mc.getNetworkHandler() == null) return;
+        if (mc.getConnection() == null) return;
         timer++;
         if (timer > scanInterval.get()) {
             timer = 0;
             waitingPacket = RANDOM.nextInt(100, 200);
-            mc.getNetworkHandler().sendPacket(new RequestCommandCompletionsC2SPacket(waitingPacket, "/msg "));
+            mc.getConnection().send(new ServerboundCommandSuggestionPacket(waitingPacket, "/msg "));
         }
     }
 
@@ -208,10 +208,10 @@ public class NetworkLoginLogoutNotifier extends Module {
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
         if (waitingPacket == null) return;
-        if (event.packet instanceof CommandSuggestionsS2CPacket packet) {
+        if (event.packet instanceof ClientboundCommandSuggestionsPacket packet) {
             if (packet.id() != waitingPacket) return;
             waitingPacket = null;
-            Suggestions suggestions = packet.getSuggestions();
+            Suggestions suggestions = packet.toSuggestions();
             if (suggestions.isEmpty()) return;
             if (mc.player == null) return;
             List<String> prevOnlinePlayers = onlinePlayers;
@@ -257,20 +257,20 @@ public class NetworkLoginLogoutNotifier extends Module {
     private void showJoinNotification(String name) {
         if (simpleNotifications.get()) {
             if (mc.player == null) return;
-            mc.player.sendMessage(Text.literal(
-                Formatting.GRAY + "["
-                    + Formatting.LIGHT_PURPLE + "Network"
-                    + Formatting.GRAY + "] "
-                    + Formatting.GRAY + "["
-                    + Formatting.GREEN + "+"
-                    + Formatting.GRAY + "] "
-                    + Formatting.RESET + name
+            mc.player.displayClientMessage(Component.literal(
+                ChatFormatting.GRAY + "["
+                    + ChatFormatting.LIGHT_PURPLE + "Network"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.GRAY + "["
+                    + ChatFormatting.GREEN + "+"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.RESET + name
             ), false);
         } else {
-            ChatUtils.sendMsg(Text.literal(
+            ChatUtils.sendMsg(Component.literal(
                     name
-                    + Formatting.GREEN + " joined "
-                    + Formatting.RESET + " the network."
+                    + ChatFormatting.GREEN + " joined "
+                    + ChatFormatting.RESET + " the network."
             ));
         }
     }
@@ -278,20 +278,20 @@ public class NetworkLoginLogoutNotifier extends Module {
     private void showLeaveNotification(String name) {
         if (simpleNotifications.get()) {
             if (mc.player == null) return;
-            mc.player.sendMessage(Text.literal(
-                Formatting.GRAY + "["
-                    + Formatting.LIGHT_PURPLE + "Network"
-                    + Formatting.GRAY + "] "
-                    + Formatting.GRAY + "["
-                    + Formatting.RED + "-"
-                    + Formatting.GRAY + "] "
-                    + Formatting.RESET + name
+            mc.player.displayClientMessage(Component.literal(
+                ChatFormatting.GRAY + "["
+                    + ChatFormatting.LIGHT_PURPLE + "Network"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.GRAY + "["
+                    + ChatFormatting.RED + "-"
+                    + ChatFormatting.GRAY + "] "
+                    + ChatFormatting.RESET + name
             ), false);
         } else {
-            ChatUtils.sendMsg(Text.literal(
+            ChatUtils.sendMsg(Component.literal(
                 name
-                    + Formatting.RED + " left "
-                    + Formatting.RESET + " the network."
+                    + ChatFormatting.RED + " left "
+                    + ChatFormatting.RESET + " the network."
             ));
         }
     }

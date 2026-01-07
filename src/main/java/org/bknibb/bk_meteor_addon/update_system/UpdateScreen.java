@@ -7,8 +7,8 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.render.MeteorToast;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.Items;
 import org.bknibb.bk_meteor_addon.BkMeteorAddon;
 import org.bknibb.bk_meteor_addon.ConfigModifier;
 
@@ -37,45 +37,45 @@ public class UpdateScreen extends WindowScreen {
         l.add(theme.label(addon.name + " " + relaseResponse.name + " from " + date + " is available")).expandX();
         l.add(theme.button("Don't Show Again")).widget().action = () -> {
             ConfigModifier.get().checkForUpdates.set(false);
-            close();
+            onClose();
         };
         l.add(theme.button("Download and Exit")).widget().action = () -> {
             Http.Request request = Http.get(relaseResponse.assets.getFirst().browser_download_url);
             request.exceptionHandler(e -> {
-                close();
+                onClose();
                 UpdateSystem.LOG.warn("Failed to download update: " + e.getMessage());
                 //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: " + e.getMessage()));
-                MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", e.getMessage()));
+                Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", e.getMessage()));
             });
             addon.getRepo().authenticate(request);
             HttpResponse<InputStream> res = request.sendInputStreamResponse();
             switch (res.statusCode()) {
                 case Http.UNAUTHORIZED -> {
                     String message = "Invalid authentication token for repository '%s'".formatted(addon.getRepo().getOwnerName());
-                    MinecraftClient.getInstance().getToastManager().add(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
+                    Minecraft.getInstance().getToastManager().addToast(new MeteorToast.Builder("GitHub: Unauthorized").icon(Items.BARRIER).text(message).build());
                     UpdateSystem.LOG.warn(message);
                     if (System.getenv("meteor.github.authorization") == null) {
                         UpdateSystem.LOG.info("Consider setting an authorization " +
                             "token with the 'meteor.github.authorization' environment variable.");
                         UpdateSystem.LOG.info("See: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens");
                     }
-                    close();
+                    onClose();
                     //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: Invalid authentication token"));
-                    MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "Invalid authentication token"));
+                    Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "Invalid authentication token"));
                     return;
                 }
                 case Http.FORBIDDEN -> {
                     UpdateSystem.LOG.warn("Failed to download update: Rate-limited by GitHub.");
-                    close();
+                    onClose();
                     //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: Rate-limited by GitHub"));
-                    MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "Rate-limited by GitHub"));
+                    Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "Rate-limited by GitHub"));
                     return;
                 }
                 case Http.NOT_FOUND -> {
                     UpdateSystem.LOG.warn("Failed to download update: GitHub repository '{}' not found.", addon.getRepo().getOwnerName());
-                    close();
+                    onClose();
                     //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: GitHub repository not found"));
-                    MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "GitHub repository not found"));
+                    Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", "GitHub repository not found"));
                     return;
                 }
                 case Http.SUCCESS -> {
@@ -84,10 +84,10 @@ public class UpdateScreen extends WindowScreen {
                     try (OutputStream os = Files.newOutputStream(target); InputStream is = res.body()) {
                         is.transferTo(os);
                     } catch (IOException e) {
-                        close();
+                        onClose();
                         UpdateSystem.LOG.warn("Failed to download update: " + e.getMessage());
                         //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: " + e.getMessage()));
-                        MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", e.getMessage()));
+                        Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", e.getMessage()));
                         return;
                     }
 //                    if (!modPath.equals(target)) {
@@ -113,15 +113,15 @@ public class UpdateScreen extends WindowScreen {
                     }
                 }
                 default -> {
-                    close();
+                    onClose();
                     UpdateSystem.LOG.warn("Failed to download update: " + res.statusCode());
                     //MinecraftClient.getInstance().getToastManager().add(new MeteorToast(null, "Update Failed", "Failed to download update: " + res.statusCode()));
-                    MinecraftClient.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", String.valueOf(res.statusCode())));
+                    Minecraft.getInstance().setScreen(new UpdateFailedScreen(theme, addon, relaseResponse, "Failed to download update", String.valueOf(res.statusCode())));
                     return;
                 }
             }
             UpdateSystem.LOG.info("Update success, exiting...");
-            MinecraftClient.getInstance().scheduleStop();
+            Minecraft.getInstance().stop();
         };
         add(theme.horizontalSeparator()).padVertical(theme.scale(8)).expandX();
         add(theme.label(relaseResponse.body)).expandX();

@@ -22,10 +22,10 @@ public class UpdateFailedScreen extends WindowScreen {
         add(theme.label(errorTitle)).expandX();
         add(theme.label("Please try again later.")).expandX();
         add(theme.label(errorMessage)).expandX();
-        add(theme.button("Close")).expandX().widget().action = this::close;
+        add(theme.button("Close")).expandX().widget().action = this::onClose;
         add(theme.button("Open Release Page")).expandX().widget().action = () -> {
-            Util.getOperatingSystem().open(relaseResponse.html_url);
-            close();
+            Util.getPlatform().openUri(relaseResponse.html_url);
+            onClose();
         };
     }
 }

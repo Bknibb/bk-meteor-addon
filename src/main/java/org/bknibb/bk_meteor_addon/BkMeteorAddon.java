@@ -11,12 +11,12 @@ import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.component.ComponentChanges;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.bknibb.bk_meteor_addon.commands.*;
 import org.bknibb.bk_meteor_addon.modules.*;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class BkMeteorAddon extends MeteorAddon {
     public static final Category CATEGORY;
     static {
         PropertyMap propertyMap = new PropertyMap(ImmutableMultimap.of("textures", new Property("textures", TEXTUREDATA)));
-        CATEGORY = new Category("BkMeteorAddon", new ItemStack(Registries.ITEM.getEntry(Items.PLAYER_HEAD), 1, ComponentChanges.builder().add(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(UUID.fromString("c5be9202-e104-46f4-9902-e269c866e594"), "msknibb", propertyMap))).build()));
+        CATEGORY = new Category("BkMeteorAddon", new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(Items.PLAYER_HEAD), 1, DataComponentPatch.builder().set(DataComponents.PROFILE, ResolvableProfile.createResolved(new GameProfile(UUID.fromString("c5be9202-e104-46f4-9902-e269c866e594"), "msknibb", propertyMap))).build()));
     }
     public static BkMeteorAddon INSTNACE;
     public static final boolean UPDATER_ENABLED = false;

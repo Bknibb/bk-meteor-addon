@@ -1,15 +1,14 @@
 package org.bknibb.bk_meteor_addon.mixin;
 
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-
-@Mixin(ClientPlayerInteractionManager.class)
+@Mixin(MultiPlayerGameMode.class)
 public interface BetterBreakAccessor {
-    @Accessor("blockBreakingCooldown")
+    @Accessor("destroyDelay")
     void setCooldown(int cooldown);
 
-    @Accessor("blockBreakingCooldown")
+    @Accessor("destroyDelay")
     int getCooldown();
 }
